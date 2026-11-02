@@ -249,6 +249,9 @@ export function iniciar(raiz) {
             assinatura = nova;
             caixaTabela.replaceChildren(tabela.el);
             caixaTabela.removeAttribute('aria-busy');
+            // A tabela carregou ao ser criada, antes da primeira amostra (lista vazia): recarrega
+            // agora com os ambientes reais, senão fica em "nenhum ambiente" até o conjunto mudar.
+            tabela.recarregar();
             return;
         }
         if (nova !== assinatura) {
