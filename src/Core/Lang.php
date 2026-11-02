@@ -61,6 +61,14 @@ class Lang
         }
         try {
             self::$active = \Ravi\Models\Setting::get('system_language', 'pt') ?: 'pt';
+            // Preferência do usuário logado (casca_idioma em user_prefs) vence a do sistema.
+            $u = $_SESSION['user']['id'] ?? null;
+            if ($u) {
+                $pref = \Ravi\Models\UserPref::getRaw((int) $u, 'casca_idioma', '');
+                if ($pref !== '' && in_array($pref, self::available(), true)) {
+                    self::$active = $pref;
+                }
+            }
         } catch (\Throwable $e) {
             self::$active = 'pt';
         }

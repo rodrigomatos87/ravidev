@@ -21,29 +21,29 @@ function aviso(texto, acao) {
     return D2UI.vazio({ chave: tx('projeto.git_sem_vinculo', 'Sem repositório ligado'), texto, icone: 'plataforma', acao });
 }
 
-export async function montarGit({ dados, base }) {
+export async function montarGit({ dados, base, recarregar: recarregarTela, irPara, ativarAba }) {
     const git = dados.git || {};
     const painel = (corpo, opcoes = {}) => D2UI.painel({ titulo: 'Git', icone: 'plataforma', area: 'projetos', ...opcoes }, ...[].concat(corpo)).el;
 
     if (!git.ativo) {
         if (!git.configurado) {
             return painel(aviso(tx('projeto.git_nao_configurado', 'A integração GitHub ainda não foi configurada pelo administrador.'),
-                { rotulo: tx('projeto.git_ver_perfil', 'Abrir meu perfil do GitHub'), icone: 'externo', fn: () => { window.location = '/settings/github'; } }));
+                { rotulo: tx('projeto.git_ver_perfil', 'Abrir meu perfil do GitHub'), icone: 'externo', fn: () => { irPara('/settings/github'); } }));
         }
         if (!dados.dono) {
             return painel(aviso(tx('projeto.git_so_dono', 'Este projeto ainda não está ligado a um repositório. Só o dono pode configurar.'),
-                { rotulo: tx('projeto.aba_visao', 'Visão geral'), icone: 'painel', fn: () => { window.location.hash = ''; window.location.reload(); } }));
+                { rotulo: tx('projeto.aba_visao', 'Visão geral'), icone: 'painel', fn: () => { ativarAba('visao'); } }));
         }
         if (!git.conectado) {
             return painel(aviso(tx('projeto.git_conectar_texto', 'Para versionar este projeto, conecte sua conta do GitHub no seu perfil.'),
-                { rotulo: tx('projeto.git_conectar', 'Conectar GitHub no seu perfil'), icone: 'plataforma', tipo: 'primario', fn: () => { window.location = '/settings/github'; } }));
+                { rotulo: tx('projeto.git_conectar', 'Conectar GitHub no seu perfil'), icone: 'plataforma', tipo: 'primario', fn: () => { irPara('/settings/github'); } }));
         }
-        return painel(formularioVinculo(base), { sub: tx('projeto.git_sub', 'Versione o projeto num repositório do GitHub') });
+        return painel(formularioVinculo(base, recarregarTela), { sub: tx('projeto.git_sub', 'Versione o projeto num repositório do GitHub') });
     }
-    return painelVinculado(dados, base, painel);
+    return painelVinculado(dados, base, painel, recarregarTela);
 }
 
-function formularioVinculo(base) {
+function formularioVinculo(base, recarregarTela) {
     // Ligar repositório existente
     const repo = D2UI.campo({ tipo: 'selecao', nome: 'repo_full_name', rotulo: tx('projeto.git_repo', 'Repositório'), obrigatorio: true, comBusca: true, opcoes: [], placeholder: tx('projeto.git_carregando', 'Carregando repositórios…') });
     const autoExistente = D2UI.campo({ tipo: 'switch', nome: 'auto_sync', rotulo: tx('projeto.git_auto', 'Aplicar tudo automaticamente (commit + push a cada entrega)'), valor: true });
@@ -73,7 +73,7 @@ function formularioVinculo(base) {
                 const d = await chamar(base + '/git/link', { metodo: 'POST', formulario: { mode: 'existing', repo_full_name: nome, branch: ramos[nome] || '', auto_sync: autoExistente.valor() ? '1' : '0' } });
                 if (!(d && d.ok)) throw new Error((d && d.error) || '');
                 D2UI.toast(tx('projeto.git_vinculado', 'Repositório vinculado.'), { tipo: 'ok' });
-                setTimeout(() => window.location.reload(), 600);
+                setTimeout(recarregarTela, 600);
             } catch (e) {
                 soltar();
                 D2UI.toast(erroDe(e, tx('projeto.git_erro_ligar', 'Não foi possível ligar o repositório.')), { tipo: 'erro' });
@@ -102,7 +102,7 @@ function formularioVinculo(base) {
                 const d = await chamar(base + '/git/link', { metodo: 'POST', formulario: { mode: 'create', name: nomeNovo.valor(), private: visibilidade.valor() || '1', auto_sync: autoNovo.valor() ? '1' : '0' } });
                 if (!(d && d.ok)) throw new Error((d && d.error) || '');
                 D2UI.toast(tx('projeto.git_criado', 'Repositório criado e vinculado.'), { tipo: 'ok' });
-                setTimeout(() => window.location.reload(), 600);
+                setTimeout(recarregarTela, 600);
             } catch (e) {
                 soltar();
                 D2UI.toast(erroDe(e, tx('projeto.git_erro_criar', 'Não foi possível criar o repositório.')), { tipo: 'erro' });
@@ -120,7 +120,7 @@ function formularioVinculo(base) {
     ], { rotulo: tx('projeto.git_como', 'Como ligar'), classe: 'projeto-abas-internas' });
 }
 
-function painelVinculado(dados, base, painel) {
+function painelVinculado(dados, base, painel, recarregarTela) {
     const git = dados.git;
     let pendente = Boolean(git.pendente);
     const caixaSelo = el('span', {});
@@ -200,7 +200,7 @@ function painelVinculado(dados, base, painel) {
             if (!(d && d.ok)) throw new Error((d && d.error) || '');
             const pronto = await aguardarSincronia(base);
             p.concluir(pronto ? tx('projeto.git_restaurado', 'Projeto restaurado.') : tx('projeto.git_demorando', 'A sincronização ainda está em andamento. Confira de novo em instantes.'));
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(recarregarTela, 1000);
         } catch (e) {
             p.falhar(erroDe(e, tx('projeto.git_falha_reverter', 'Falha ao reverter.')));
         }
@@ -237,7 +237,7 @@ function painelVinculado(dados, base, painel) {
                 const d = await chamar(base + '/git/unlink', { metodo: 'POST', formulario: { _: '1' } });
                 if (!(d && d.ok)) throw new Error((d && d.error) || '');
                 D2UI.toast(tx('projeto.git_desvinculado', 'Git desvinculado.'), { tipo: 'ok' });
-                setTimeout(() => window.location.reload(), 600);
+                setTimeout(recarregarTela, 600);
             } catch (e) {
                 D2UI.toast(erroDe(e, tx('projeto.erro_generico', 'Não foi possível concluir.')), { tipo: 'erro' });
             }

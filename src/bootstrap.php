@@ -26,7 +26,7 @@ define('CONFIG_PATH', ROOT_PATH . '/config');
 define('VIEWS_PATH', ROOT_PATH . '/views');
 define('STORAGE_PATH', ROOT_PATH . '/storage');
 define('PUBLIC_PATH', ROOT_PATH . '/public');
-define('RAVI_VERSION', '1.0.0');
+define('RAVI_VERSION', '2.0.0');
 define('RAVI_START_TIME', microtime(true));
 
 // ============================================================================

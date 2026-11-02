@@ -28,7 +28,9 @@ class Response
     public static function view(string $name, array $data = [], int $statusCode = 200): self
     {
         $content = view($name, $data);
-        return new self($content, $statusCode, ['Content-Type' => 'text/html; charset=UTF-8']);
+        $tipo = (function_exists('janela_pedida') && janela_pedida() && str_starts_with(ltrim($content), '{'))
+            ? 'application/json; charset=UTF-8' : 'text/html; charset=UTF-8';
+        return new self($content, $statusCode, ['Content-Type' => $tipo]);
     }
     
     public static function redirect(string $url, int $statusCode = 302): self

@@ -1,25 +1,42 @@
 // Terminal do projeto: xterm (carregado antes, em window.Terminal e window.FitAddon) ligado
 // ao WebSocket da casa. Mesmo protocolo da tela anterior: auth, term_start, term_input,
 // term_resize, term_output, term_exit e error.
-import { tx, aplicarCores, dadosPagina, D2UI } from './projeto-comum.js';
-
-aplicarCores();
-const dados = dadosPagina();
-const caixaEstado = document.getElementById('terminal-estado');
-const host = document.getElementById('terminal');
-
-function estado(texto, tom = 'neutro', pulsando = false) {
-    if (!caixaEstado) return;
-    caixaEstado.textContent = '';
-    caixaEstado.append(D2UI.selo(texto, tom, { pulsando }));
-}
+import { tx, aplicarCores, dadosPagina, D2UI, novaVida, recarregarTela } from './projeto-comum.js';
 
 // Cores do terminal a partir dos tokens do tema atual.
 function corDe(nome, padrao) {
     const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
     return v || padrao;
 }
-function temaTerminal() {
+
+export async function iniciar(raiz, dadosTela) {
+    const vida = novaVida(raiz, 'terminal');
+    const { signal } = vida;
+    aplicarCores(raiz);
+    const dados = dadosPagina(raiz, dadosTela);
+    const caixaEstado = raiz.querySelector('#terminal-estado');
+    const host = raiz.querySelector('#terminal');
+
+    if (!window.Terminal || !window.FitAddon || !host) {
+        estadoEm(caixaEstado, tx('terminal.indisponivel', 'Indisponível'), 'erro');
+        if (host) {
+            host.textContent = '';
+            host.append(D2UI.vazio({ chave: tx('terminal.nao_carregou', 'O terminal não carregou'), texto: tx('terminal.nao_carregou_texto', 'Recarregue a página para tentar de novo.'), icone: 'erro', tipo: 'erro', acao: { rotulo: tx('terminal.recarregar', 'Recarregar'), icone: 'atualizar', fn: () => recarregarTela(raiz) } }));
+        }
+        return () => vida.abort();
+    }
+    const desligar = ligarTerminal({ raiz, host, caixaEstado, dados, signal });
+    signal.addEventListener('abort', desligar);
+    return () => vida.abort();
+}
+
+function estadoEm(caixaEstado, texto, tom = 'neutro', pulsando = false) {
+    if (!caixaEstado) return;
+    caixaEstado.textContent = '';
+    caixaEstado.append(D2UI.selo(texto, tom, { pulsando }));
+}
+
+function temaTerminal(host) {
     const fundo = corDe('--d2-bg-subtle', 'Canvas');
     host.style.setProperty('--terminal-fundo', fundo);
     return {
@@ -39,23 +56,16 @@ function temaTerminal() {
     };
 }
 
-if (!window.Terminal || !window.FitAddon || !host) {
-    estado(tx('terminal.indisponivel', 'Indisponível'), 'erro');
-    if (host) {
-        host.textContent = '';
-        host.append(D2UI.vazio({ chave: tx('terminal.nao_carregou', 'O terminal não carregou'), texto: tx('terminal.nao_carregou_texto', 'Recarregue a página para tentar de novo.'), icone: 'erro', tipo: 'erro', acao: { rotulo: tx('terminal.recarregar', 'Recarregar'), icone: 'atualizar', fn: () => window.location.reload() } }));
-    }
-} else {
-    iniciar();
-}
-
-function iniciar() {
+// Liga o xterm ao WebSocket da casa; devolve a função que derruba tudo (socket, observadores, xterm).
+function ligarTerminal({ raiz, host, caixaEstado, dados, signal }) {
+    const estado = (texto, tom, pulsando) => estadoEm(caixaEstado, texto, tom, pulsando);
+    let encerrado = false;
     const term = new window.Terminal({
         cursorBlink: true,
         fontFamily: corDe('--d2-font-mono', 'monospace'),
         fontSize: 13,
         scrollback: 5000,
-        theme: temaTerminal(),
+        theme: temaTerminal(host),
     });
     const fit = new window.FitAddon.FitAddon();
     term.loadAddon(fit);
@@ -64,8 +74,8 @@ function iniciar() {
     ajustar();
 
     // Troca de tema na barra: repinta o terminal.
-    new MutationObserver(() => { term.options.theme = temaTerminal(); })
-        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    const observarTema = new MutationObserver(() => { term.options.theme = temaTerminal(host); });
+    observarTema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     let ws = null;
     let iniciado = false;
@@ -87,6 +97,7 @@ function iniciar() {
         return (window.location.protocol === 'https:' ? 'wss' : 'ws') + '://' + window.location.host + '/ws';
     }
     function conectar() {
+        if (encerrado) return;
         iniciado = false;
         estado(tx('terminal.conectando', 'Conectando…'), 'neutro', true);
         const meta = document.querySelector('meta[name="ws-token"]');
@@ -127,10 +138,12 @@ function iniciar() {
             }
         };
         ws.onclose = () => {
+            if (encerrado) return;
             if (iniciado) estado(tx('terminal.desconectado', 'Desconectado'), 'erro');
             iniciado = false;
         };
         ws.onerror = () => {
+            if (encerrado) return;
             estado(tx('terminal.erro_conexao', 'Erro de conexão'), 'erro');
             D2UI.toast(tx('terminal.erro_conexao_texto', 'Não foi possível conectar ao terminal. Use Reconectar para tentar de novo.'), { tipo: 'erro', titulo: tx('terminal.titulo', 'Terminal') });
         };
@@ -138,12 +151,26 @@ function iniciar() {
 
     term.onData((texto) => { if (iniciado) enviar({ type: 'term_input', data: paraBase64(codificador.encode(texto)) }); });
 
-    const reconectar = document.getElementById('terminal-reconectar');
+    const reconectar = raiz.querySelector('#terminal-reconectar');
     if (reconectar) reconectar.addEventListener('click', () => {
         try { if (ws) ws.close(); } catch (e) { /* já fechado */ }
         term.reset();
         conectar();
-    });
+    }, { signal });
 
     conectar();
+
+    return () => {
+        encerrado = true;
+        clearTimeout(espera);
+        observar.disconnect();
+        observarTema.disconnect();
+        if (ws) {
+            ws.onopen = null; ws.onmessage = null; ws.onclose = null; ws.onerror = null;
+            try { ws.close(); } catch (e) { /* já fechado */ }
+            ws = null;
+        }
+        try { term.dispose(); } catch (e) { /* já destruído */ }
+        host.textContent = '';
+    };
 }

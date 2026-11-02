@@ -169,9 +169,10 @@ Código: `gateway-public/index.php`, `src/Gateway/`. Referência de uso em
 2. `/v1/health` é público. As demais rotas exigem `x-api-key` (ou `Authorization: Bearer`),
    comparado por SHA-256 com `gw_tokens.token_hash` (token ativo e não revogado). Tokens são
    criados em Administração > Gateway de API com o prefixo `sk-ravidev-`.
-3. `GatewayService` escolhe o backend: Claude Code CLI em container efêmero
-   (`GatewayClaudeService`, padrão), proxy fino para a Messages API (`GatewayHttpService`, só
-   com `GW_PROXY_ENABLED`), Codex (`GatewayCodexService`, modelos `gpt-*`) ou DeepSeek
+3. `GatewayService` escolhe o backend: proxy fino para a Messages API da assinatura
+   (`GatewayHttpService`, padrão; percorre a cadeia de licenças em 429), Claude Code CLI em
+   container efêmero (`GatewayClaudeService`, reserva quando o proxy falha ou com
+   `GW_PROXY_ENABLED=false`), Codex (`GatewayCodexService`, modelos `gpt-*`) ou DeepSeek
    (`GatewayDeepSeekService`, modelos `deepseek-*` ou regra do token em `gw_tokens.backend`).
 4. `GatewaySlots` limita os containers simultâneos (`GW_MAX_CONCURRENCY` e faixa longa
    `GW_LONGAS_MAX`); sem vaga, 529.

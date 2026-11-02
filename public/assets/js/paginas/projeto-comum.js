@@ -73,10 +73,45 @@ export function enviarComProgresso(url, dados, aoProgresso) {
     });
 }
 
-export function dadosPagina() {
-    const el = document.getElementById('dados-pagina');
-    if (!el) return {};
-    try { return JSON.parse(el.textContent || '{}'); } catch (e) { return {}; }
+// Dados da tela: os que a casca já decodificou ou, sem eles, o #dados-pagina de dentro da raiz.
+export function dadosPagina(raiz = document, dados = null) {
+    if (dados && typeof dados === 'object') return dados;
+    const no = raiz.querySelector('#dados-pagina');
+    if (!no) return {};
+    try { return JSON.parse(no.textContent || '{}') || {}; } catch (e) { return {}; }
+}
+
+// Navegação dentro da casca: outra tela abre numa janela quando o palco existe; sem palco, página inteira.
+export function irPara(url) {
+    if (window.Casca && typeof window.Casca.abrir === 'function') return window.Casca.abrir(url);
+    window.location.href = url;
+    return null;
+}
+
+// Recarrega só a tela (a janela) quando a casca sabe fazer isso; sem palco, a página.
+export function recarregarTela(raiz) {
+    if (window.Casca && typeof window.Casca.recarregar === 'function') return window.Casca.recarregar(raiz);
+    window.location.reload();
+    return null;
+}
+
+// Parâmetro da URL da tela (no palco o endereço da página é do palco; a tela guarda o seu em data-url).
+export function parametroDaTela(raiz, nome) {
+    const dono = raiz && raiz.closest ? raiz.closest('[data-url]') : null;
+    try { return new URL((dono && dono.dataset.url) || window.location.href, window.location.origin).searchParams.get(nome); } catch (e) { return null; }
+}
+
+// Vida de uma tela: cada iniciar() na mesma raiz encerra a anterior (ouvintes com { signal } somem
+// juntos), e a limpeza devolvida à casca aborta a atual.
+const vidas = new WeakMap();
+export function novaVida(raiz, chave) {
+    let mapa = vidas.get(raiz);
+    if (!mapa) { mapa = new Map(); vidas.set(raiz, mapa); }
+    const anterior = mapa.get(chave);
+    if (anterior) anterior.abort();
+    const vida = new AbortController();
+    mapa.set(chave, vida);
+    return vida;
 }
 
 // Criação de elementos sem innerHTML.

@@ -129,6 +129,17 @@ if (!function_exists('csrf_token')) {
     }
 }
 
+if (!function_exists('janela_pedida')) {
+    /**
+     * A requisição veio de uma janela do palco (cabeçalho X-Ravi-Janela: 1)? Nesse caso o layout do
+     * painel devolve só o fragmento da tela em JSON (título, área, html, scripts), não a casca inteira.
+     */
+    function janela_pedida(): bool
+    {
+        return (string) ($_SERVER['HTTP_X_RAVI_JANELA'] ?? '') === '1';
+    }
+}
+
 if (!function_exists('ws_token')) {
     /**
      * Token de autenticação do WebSocket desta sessão. Vai para a página (meta ws-token) no lugar do

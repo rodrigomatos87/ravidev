@@ -318,6 +318,9 @@ $router->group(['middleware' => ['auth', 'csrf']], function(Router $router) {
         $router->delete('/account', 'SettingsController@deleteAccount');
     });
 
+    // Preferências da casca (idioma, favoritos, disposição das janelas)
+    $router->post('/conta/preferencia', 'PreferenciaController@salvar');
+
     // Rotas autenticadas dos módulos opcionais ('rotas_auth')
     \Ravi\Core\Modulos::rotasAuth($router);
 });

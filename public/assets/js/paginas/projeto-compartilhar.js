@@ -51,7 +51,7 @@ function buscaUsuarios(base, { rotulo, placeholder, aoEscolher, aoEnterTexto }) 
     return { caixa, entrada };
 }
 
-export async function montarCompartilhar({ dados, base }) {
+export async function montarCompartilhar({ dados, base, raiz, recarregar }) {
     const membros = Array.isArray(dados.membros) ? [...dados.membros] : [];
     const listaMembros = el('ul', { class: 'lista-acionavel projeto-membros' });
 
@@ -119,7 +119,7 @@ export async function montarCompartilhar({ dados, base }) {
         });
         corpo.push(convite.caixa);
     } else {
-        const form = document.getElementById('form-sair');
+        const form = raiz.querySelector('#form-sair');
         corpo.push(el('div', { class: 'd2-faixa projeto-faixa' }, D2UI.icone('info'),
             el('div', { class: 'd2-faixa-texto', texto: tx('projeto.share_membro', 'Você é membro deste projeto compartilhado.') }),
             form ? el('div', { class: 'd2-faixa-acoes' }, botao(tx('projeto.share_sair', 'Sair do projeto'), {
@@ -128,7 +128,8 @@ export async function montarCompartilhar({ dados, base }) {
                     const ok = await D2UI.confirmar({ titulo: tx('projeto.share_sair', 'Sair do projeto'), texto: tx('projeto.share_sair_texto', 'Você deixa de ver este projeto e as conversas dele. Para voltar, o dono precisa compartilhar de novo.'), perigo: true, rotuloOk: tx('projeto.share_sair', 'Sair do projeto') });
                     if (!ok) return;
                     carregando(ev.currentTarget || null);
-                    form.submit();
+                    // requestSubmit dispara o submit: a casca intercepta dentro da janela.
+                    form.requestSubmit();
                 },
             })) : null));
     }
@@ -155,7 +156,7 @@ export async function montarCompartilhar({ dados, base }) {
                     const d = await chamar(base + '/transfer', { metodo: 'POST', formulario: { user_id: u.id } });
                     if (!(d && d.ok)) throw new Error((d && d.error) || '');
                     D2UI.toast(tx('projeto.transf_feito', 'Projeto transferido para') + ' ' + ((d.new_owner && d.new_owner.email) || u.email) + '.', { tipo: 'ok' });
-                    setTimeout(() => window.location.reload(), 900);
+                    setTimeout(recarregar, 900);
                 } catch (e) {
                     entrada.value = '';
                     D2UI.toast(msgErro(e, tx('projeto.transf_falha', 'Falha ao transferir.')), { tipo: 'erro' });

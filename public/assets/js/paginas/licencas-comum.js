@@ -1,10 +1,14 @@
-// Peças comuns das telas de licenças (Claude Code e ChatGPT): dados da página, textos,
-// formulário em modal, teste com detalhe, exclusão com palavra, formulários com espera e cópia.
+// Peças comuns das telas de licenças (Claude Code e ChatGPT): textos, formulário em modal,
+// teste com detalhe, exclusão com palavra, formulários com espera e cópia.
+// Tudo recebe a raiz da tela (consultas relativas a ela) e o sinal de um AbortController:
+// abortar o sinal desliga os ouvintes (limpeza ao fechar a janela ou ao reiniciar a tela).
 import { chamar, D2UI } from '/assets/d2/js/casca.js';
 
-export function lerDados() {
-    const no = document.getElementById('dados-pagina');
-    try { return no ? JSON.parse(no.textContent || '{}') : {}; } catch (e) { return {}; }
+// Envia um formulário da tela: requestSubmit dispara o evento submit (a casca intercepta os que
+// estão dentro da tela); no modo página vira o envio normal do navegador.
+export function enviarForm(form) {
+    if (typeof form.requestSubmit === 'function') form.requestSubmit();
+    else form.submit();
 }
 
 // Texto da página com troca de :marcadores (as chaves vêm do PHP, já traduzidas).
@@ -43,20 +47,21 @@ export async function comEspera(botao, tarefa) {
 }
 
 // Formulários POST comuns (ativar, roteamento...): mostra espera no botão até a página recarregar.
-export function ligarFormulariosComEspera() {
-    document.querySelectorAll('form[data-carregando]').forEach((form) => {
+export function ligarFormulariosComEspera(raiz, sinal) {
+    raiz.querySelectorAll('form[data-carregando]').forEach((form) => {
         form.addEventListener('submit', (ev) => {
             const botao = ev.submitter || form.querySelector('[type="submit"]');
             if (!botao) return;
             // adia para não tirar o botão do envio antes de o navegador montar os dados
             setTimeout(() => { botao.disabled = true; botao.classList.add('d2-btn-carregando'); botao.setAttribute('aria-busy', 'true'); }, 0);
-        });
+        }, { signal: sinal });
     });
 }
 
 // Abre o <template> do formulário num modal. preencher(form) ajusta ação e valores.
-export function abrirFormulario({ modeloId, titulo, rotuloOk, rotuloCancelar, preencher, icone = 'chave', largura = 620 }) {
-    const modelo = document.getElementById(modeloId);
+// O formulário fica no modal (fora da tela), então segue com o envio nativo do navegador.
+export function abrirFormulario(raiz, { modeloId, titulo, rotuloOk, rotuloCancelar, preencher, icone = 'chave', largura = 620 }) {
+    const modelo = raiz.querySelector('#' + modeloId);
     if (!modelo) return;
     const corpo = modelo.content.cloneNode(true);
     const form = corpo.querySelector('form');
@@ -78,8 +83,8 @@ export function abrirFormulario({ modeloId, titulo, rotuloOk, rotuloCancelar, pr
 }
 
 // Exclusão: formulários com data-excluir pedem a palavra antes de enviar.
-export function ligarExclusao({ titulo, texto, rotuloOk, palavra = 'EXCLUIR' }) {
-    document.querySelectorAll('form[data-excluir]').forEach((form) => {
+export function ligarExclusao(raiz, sinal, { titulo, texto, rotuloOk, palavra = 'EXCLUIR' }) {
+    raiz.querySelectorAll('form[data-excluir]').forEach((form) => {
         form.addEventListener('submit', async (ev) => {
             if (form.dataset.confirmado === '1') return;
             ev.preventDefault();
@@ -91,8 +96,8 @@ export function ligarExclusao({ titulo, texto, rotuloOk, palavra = 'EXCLUIR' }) 
             form.dataset.confirmado = '1';
             const botao = form.querySelector('[type="submit"]');
             if (botao) { botao.disabled = true; botao.classList.add('d2-btn-carregando'); }
-            form.submit();
-        });
+            enviarForm(form);
+        }, { signal: sinal });
     });
 }
 
@@ -118,7 +123,7 @@ export async function testarLicenca(botao, url, tx) {
 }
 
 // Seletor que salva sozinho ao mudar: trava enquanto salva e volta ao valor anterior se falhar.
-export function ligarSeletorQueSalva(sel, salvar) {
+export function ligarSeletorQueSalva(sel, salvar, sinal) {
     let anterior = sel.value;
     sel.addEventListener('change', async () => {
         sel.disabled = true;
@@ -133,12 +138,12 @@ export function ligarSeletorQueSalva(sel, salvar) {
             sel.disabled = false;
             sel.removeAttribute('aria-busy');
         }
-    });
+    }, { signal: sinal });
 }
 
-// Botões "copiar" dentro de modais e da página (delegação no documento).
-export function ligarCopiar(tx) {
-    document.addEventListener('click', async (ev) => {
+// Botões "copiar" (delegação no contêiner: a tela ou o corpo de um modal).
+export function ligarCopiar(conteiner, tx, sinal) {
+    conteiner.addEventListener('click', async (ev) => {
         const b = ev.target.closest('[data-copiar]');
         if (!b) return;
         try {
@@ -147,14 +152,17 @@ export function ligarCopiar(tx) {
         } catch (e) {
             D2UI.toast(tx('copiar_falhou'), { tipo: 'aviso' });
         }
-    });
+    }, sinal ? { signal: sinal } : undefined);
 }
 
-// Ajuda vinda de um <template>: abre num modal só de leitura.
-export function abrirAjuda(modeloId, titulo, rotuloFechar) {
-    const modelo = document.getElementById(modeloId);
+// Ajuda vinda de um <template>: abre num modal só de leitura (os botões de copiar ligados no corpo).
+export function abrirAjuda(raiz, modeloId, titulo, rotuloFechar, tx) {
+    const modelo = raiz.querySelector('#' + modeloId);
     if (!modelo) return;
-    D2UI.modal({ titulo, icone: 'info', largura: 620, corpo: modelo.content.cloneNode(true), botoes: [{ rotulo: rotuloFechar, tipo: 'primario' }] });
+    const corpo = document.createElement('div');
+    corpo.append(modelo.content.cloneNode(true));
+    if (tx) ligarCopiar(corpo, tx);
+    D2UI.modal({ titulo, icone: 'info', largura: 620, corpo, botoes: [{ rotulo: rotuloFechar, tipo: 'primario' }] });
 }
 
 export { chamar, D2UI };

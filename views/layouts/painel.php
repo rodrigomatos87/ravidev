@@ -1,6 +1,6 @@
 <?php
 /**
- * Layout do painel (design system d2): menu lateral, barra do topo e conteúdo da página.
+ * Layout do painel (design system d2): a casca de janelas (casca/app.js) e a tela pedida.
  *
  * A view chama $this->layout('layouts/painel', [
  *   'title'       => 'Usuários',           título da página (aba do navegador e cabeçalho)
@@ -26,6 +26,33 @@ foreach (['error' => 'erro', 'success' => 'ok', 'info' => 'info', 'warning' => '
 }
 $usuarioNome = (string) (auth()->user()?->name ?? auth()->user()?->email ?? 'Usuário');
 $impersonator = \Ravi\Core\Session::get('impersonator');
+
+// Cabeçalho da tela (título, resumo e ações) como HTML, reaproveitado no modo janela.
+$cabecalhoTela = '';
+if (empty($hidePageTitle)) {
+    $cabecalhoTela = '<header class="tela-cab"><div class="tela-cab-texto"><h1 class="tela-titulo">' . e($pageTitle ?? $title ?? '') . '</h1>'
+        . (!empty($subtitulo) ? '<p class="tela-sub">' . e($subtitulo) . '</p>' : '') . '</div>'
+        . (!empty($acoes) ? '<div class="tela-cab-acoes">' . $acoes . '</div>' : '') . '</header>';
+}
+$dadosTela = [
+    'titulo'      => (string) ($title ?? config('app.name')),
+    'subtitulo'   => (string) ($subtitulo ?? ''),
+    'area'        => (string) $area,
+    'icone'       => (string) ($icone ?? ($itemAtivo['icone'] ?? 'grade')),
+    'pagina'      => (string) ($currentPage ?? ''),
+    'url'         => (string) ($_SERVER['REQUEST_URI'] ?? '/'),
+    'larga'       => !empty($paginaLarga),
+    'scripts'     => array_values(array_map($versao, (array) ($scripts ?? []))),
+    'estilos'     => array_values(array_map($versao, (array) ($estilos ?? []))),
+    'flash'       => $flashes,
+];
+
+// Pedida por uma janela do palco: só o fragmento da tela, em JSON (Response::view troca o Content-Type).
+if (janela_pedida()) {
+    echo json_encode($dadosTela + ['html' => $cabecalhoTela . ($content ?? '')], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return;
+}
+$preferencias = auth()->id() ? \Ravi\Controllers\PreferenciaController::daCasca((int) auth()->id()) : [];
 ?>
 <!DOCTYPE html>
 <html lang="<?= e(['pt' => 'pt-BR', 'en' => 'en-US', 'es' => 'es-ES'][$idioma] ?? 'pt-BR') ?>" class="casca-ativa" data-area="<?= e($area) ?>">
@@ -46,7 +73,11 @@ $impersonator = \Ravi\Core\Session::get('impersonator');
         '/assets/d2/js/d2ui.js'    => $versao('/assets/d2/js/d2ui.js'),
         '/assets/d2/js/tema.js'    => $versao('/assets/d2/js/tema.js'),
         '/assets/d2/js/eventos.js' => $versao('/assets/d2/js/eventos.js'),
-    ]], JSON_UNESCAPED_SLASHES) ?></script>
+    ] + array_reduce(glob(PUBLIC_PATH . '/assets/d2/js/casca/*.js') ?: [], static function (array $mapa, string $arquivo) use ($versao): array {
+        $url = '/assets/d2/js/casca/' . basename($arquivo);
+        $mapa[$url] = $versao($url);
+        return $mapa;
+    }, [])], JSON_UNESCAPED_SLASHES) ?></script>
     <link rel="stylesheet" href="<?= $versao('/assets/d2/css/d2.css') ?>">
     <link rel="stylesheet" href="<?= $versao('/assets/d2/css/casca.css') ?>">
     <link rel="stylesheet" href="<?= $versao('/assets/d2/css/paginas.css') ?>">
@@ -55,37 +86,22 @@ $impersonator = \Ravi\Core\Session::get('impersonator');
     <?php endforeach; ?>
 </head>
 <body>
-<a class="casca-pular" href="#conteudo"><?= e(t('casca.pular', 'Ir para o conteúdo')) ?></a>
-<div class="casca">
-    <?php include __DIR__ . '/../partials/painel/menu.php'; ?>
-    <div class="casca-veu" id="casca-veu" aria-hidden="true"></div>
-    <div class="casca-principal">
-        <?php if ($impersonator): ?>
-            <div class="casca-faixa" role="status">
-                <?= d2icone('olho') ?>
-                <span><?= e(t('casca.impersonando', 'Você está vendo como')) ?> <strong><?= e($usuarioNome) ?></strong> (<?= e($impersonator['name'] ?? 'admin') ?>).</span>
-                <form method="POST" action="/impersonation/stop">
-                    <?= csrf_field() ?>
-                    <button type="submit" class="d2-btn d2-btn-sm d2-btn-secundario"><?= e(t('casca.voltar_conta', 'Voltar para minha conta')) ?></button>
-                </form>
-            </div>
-        <?php endif; ?>
-        <?php include __DIR__ . '/../partials/painel/topo.php'; ?>
-        <main class="casca-conteudo" id="conteudo" tabindex="-1">
-            <div class="pagina<?= !empty($paginaLarga) ? ' is-larga' : '' ?>">
-                <?php if (empty($hidePageTitle)): ?>
-                    <header class="tela-cab">
-                        <div class="tela-cab-texto">
-                            <h1 class="tela-titulo"><?= e($pageTitle ?? $title ?? '') ?></h1>
-                            <?php if (!empty($subtitulo)): ?><p class="tela-sub"><?= e($subtitulo) ?></p><?php endif; ?>
-                        </div>
-                        <?php if (!empty($acoes)): ?><div class="tela-cab-acoes"><?= $acoes ?></div><?php endif; ?>
-                    </header>
-                <?php endif; ?>
-                <?= $content ?? '' ?>
-            </div>
-        </main>
+<?php // A casca (menu, topo, palco de janelas, rodapé) é montada por casca/app.js dentro de #casca. ?>
+<div id="casca" class="casca"></div>
+<?php if ($impersonator): ?>
+    <div class="casca-faixa" role="status">
+        <?= d2icone('olho') ?>
+        <span><?= e(t('casca.impersonando', 'Você está vendo como')) ?> <strong><?= e($usuarioNome) ?></strong> (<?= e($impersonator['name'] ?? 'admin') ?>).</span>
+        <form method="POST" action="/impersonation/stop" data-pagina-cheia>
+            <?= csrf_field() ?>
+            <button type="submit" class="d2-btn d2-btn-sm d2-btn-secundario"><?= e(t('casca.voltar_conta', 'Voltar para minha conta')) ?></button>
+        </form>
     </div>
+<?php endif; ?>
+<?php // Tela pedida, já desenhada pelo PHP: a casca a abre como janela (ou como painel ao fundo). ?>
+<div class="pagina<?= !empty($paginaLarga) ? ' is-larga' : '' ?>" id="tela-inicial" hidden data-url="<?= e($dadosTela['url']) ?>">
+    <?= $cabecalhoTela ?>
+    <?= $content ?? '' ?>
 </div>
 <form id="form-sair" action="/logout" method="POST" hidden><?= csrf_field() ?></form>
 <script>
@@ -95,7 +111,15 @@ window.RAVI_CASCA = <?= json_encode([
     'csrf'    => csrf_token(),
     'wsUrl'   => websocket_url(),
     'usuario' => ['id' => auth()->id(), 'nome' => $usuarioNome, 'admin' => $menu['admin']],
+    'versao'  => RAVI_VERSION,
+    'appNome' => config('app.name'),
     'flash'   => $flashes,
+    // Menu (montado pelo MenuService), preferências da casca e a tela inicial (já no HTML, em #tela-inicial)
+    'menu'    => ['projetos' => $menu['projetos'], 'secoes' => $menu['secoes'], 'todos' => $menu['todos']],
+    'preferencias' => $preferencias,
+    'tela'    => $dadosTela,
+    // Páginas que saem da casca (têm layout próprio): a casca navega de verdade em vez de abrir janela
+    'paginasCheias' => ['/ide', '/chat/', '/logout', '/p/', '/login', '/admin/impersonate/', '/impersonation/stop'],
     'textos'  => $textosD2 + [
         'casca.sem_notificacoes' => t('casca.sem_notificacoes', 'Nenhuma tarefa recente.'),
         'casca.concluida' => t('casca.concluida', 'Concluída'),
@@ -105,8 +129,5 @@ window.RAVI_CASCA = <?= json_encode([
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
 <script type="module">import '/assets/d2/js/casca.js';</script>
-<?php foreach ((array) ($scripts ?? []) as $js): ?>
-    <script type="module" src="<?= e($versao($js)) ?>"></script>
-<?php endforeach; ?>
 </body>
 </html>

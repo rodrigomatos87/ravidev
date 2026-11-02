@@ -541,6 +541,9 @@ function raizJanela(janela) {
     if (c instanceof Element) return c.closest('.janela, [data-janela]') || c.parentElement || c;
     return null;
 }
+// Modais abertos (D2UI.fecharModais fecha todos: a casca usa ao enviar um formulário de modal).
+const modaisAbertos = new Set();
+
 const CLASSE_BOTAO = { primario: 'd2-btn-primary', primary: 'd2-btn-primary', perigo: 'd2-btn-danger', danger: 'd2-btn-danger', secundario: 'd2-btn-secundario', fantasma: 'd2-btn-fantasma' };
 let modaisTela = 0;
 function modal(opcoes = {}) {
@@ -561,6 +564,7 @@ function modal(opcoes = {}) {
     const rodape = h('div', { class: 'd2-modal-rodape' });
     caixa.append(corpoEl, rodape);
     const controleModal = { el: caixa, veu: null, corpo: corpoEl, rodape, botoes: [], fechar: (motivo) => fechar(motivo || 'codigo'), definirFechavel };
+    modaisAbertos.add(controleModal);
     function adicionarBotao(b) {
         const botaoEl = h('button', { type: 'button', class: ('d2-btn ' + (CLASSE_BOTAO[b.tipo || 'secundario'] || '')).trim() },
             b.icone ? icone(b.icone) : null, h('span', { texto: txt(b.rotulo) }));
@@ -647,6 +651,7 @@ function modal(opcoes = {}) {
     function fechar(motivo) {
         if (fechado) return;
         fechado = true;
+        modaisAbertos.delete(controleModal);
         desempilhar(camada);
         for (const e of inertes) e.inert = false;
         if (!raiz && --modaisTela === 0) document.documentElement.style.overflow = '';
@@ -3245,6 +3250,10 @@ function grafico(opcoes = {}) {
 
 // Configuração: tradutor, idioma, caminho do sprite, moeda, país padrão do telefone e o "hoje" da empresa
 // (fuso: nome IANA ou função que o devolve; hoje: função que devolve AAAA-MM-DD no fuso da empresa).
+function fecharModais() {
+    for (const m of [...modaisAbertos]) m.fechar('codigo');
+}
+
 function configurar(o = {}) {
     for (const k of ['t', 'idioma', 'sprite', 'moeda', 'paisTelefone', 'fuso', 'hoje']) if (o[k] !== undefined) conf[k] = o[k];
     return D2UI;
@@ -3252,7 +3261,7 @@ function configurar(o = {}) {
 
 const D2UI = {
     configurar, t,
-    toast, modal, confirmar, confirm: confirmar, progresso,
+    toast, modal, fecharModais, confirmar, confirm: confirmar, progresso,
     tabela, esqueleto, vazio, selo, avatar, iniciais, icone, abas, menuContexto,
     indicador, painel, painelRecolhivel, contagemRegressiva, grafico, areas: AREAS, tons: TONS,
     esconderDica, dica: { esconder: esconderDica },

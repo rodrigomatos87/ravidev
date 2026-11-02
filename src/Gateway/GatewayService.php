@@ -319,38 +319,45 @@ class GatewayService
             $this->record($tokenId, $clientIp, $model, null, 'max', [], 'error', $err, $started, $requestText, null, $srvTok, $srvIps, $identityJson);
             return $this->errorResponse(502, 'api_error', 'Falha ao processar a requisição via Max: ' . $err);
         }
-        $oauth = $licenses[0]['token'] ?? '';
-
-        // ── Backend proxy fino → Messages API oficial (OPT-IN via GW_PROXY_ENABLED) ──
-        // DESLIGADO por padrão. Motivo: a API crua com o token OAuth do Max cai no rate-limit de
-        // API PADRÃO (429 imediato no Opus/Sonnet), enquanto o Claude Code CLI usa o bucket generoso
-        // da ASSINATURA (limites de sessão/semana). Portanto o proxy só ganha latência para modelos
-        // "leves" (ex.: Haiku); no Opus ele quebra. Enquanto o proxy não souber usar o bucket certo
-        // (mimetizar os headers do CLI), o padrão é o CLI legado — que "sempre funcionou".
-        // Quando ligado, um erro de API (ex.: 429) NÃO é repassado ao cliente: cai no CLI legado.
+        // ── Backend PRIMÁRIO: proxy fino → Messages API oficial (padrão; GW_PROXY_ENABLED=false desliga) ──
+        // Até 02/11/2026 vinha desligado: a API crua com o token OAuth do Max caía no rate-limit da
+        // API PADRÃO (429 imediato no Opus/Sonnet). A causa era o request sem a cara do Claude Code:
+        // a assinatura exige um primeiro bloco de `system` com a identidade do agente (e os
+        // cabeçalhos do CLI), o que o GatewayHttpService passou a montar. Provado em A/B no
+        // servidor da API: mesma licença, Opus 429 em 0,3 s sem o bloco e 200 em 0,9 s com ele.
+        // Percorre a cadeia de licenças do painel: limite (429) ou sobrecarga (529) numa licença
+        // passa à seguinte; outro erro de API ou falha de transporte cai no CLI legado, que
+        // continua como reserva. Erro do proxy NUNCA vai direto ao cliente.
         $proxyErr = null;
-        if (filter_var(env('GW_PROXY_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
-            $proxy = (new GatewayHttpService($oauth))->forward($body);
-            if ($proxy['ok'] && $proxy['json'] !== null) {
-                $j = $proxy['json'];
-                $u = is_array($j['usage'] ?? null) ? $j['usage'] : [];
-                $prompt     = (int) ($u['input_tokens'] ?? 0);
-                $cacheRead  = (int) ($u['cache_read_input_tokens'] ?? 0);
-                $cacheWrite = (int) ($u['cache_creation_input_tokens'] ?? 0);
-                $output     = (int) ($u['output_tokens'] ?? 0);
-                $usage = [
-                    'input_tokens'       => $prompt + $cacheRead + $cacheWrite, // total processado (compat)
-                    'prompt_tokens'      => $prompt,
-                    'cache_read_tokens'  => $cacheRead,
-                    'cache_write_tokens' => $cacheWrite,
-                    'output_tokens'      => $output,
-                ];
-                $this->record($tokenId, $clientIp, $model, (string) ($j['model'] ?? $model), 'max', $usage, 'ok', null, $started, $requestText, $this->extractResponseText($j), $srvTok, $srvIps, $identityJson);
-                // Repassa a resposta REAL da Anthropic (inclui usage com cache — corrige a telemetria do cliente).
-                return ['http' => $proxy['http'], 'json' => $j];
+        if (filter_var(env('GW_PROXY_ENABLED', true), FILTER_VALIDATE_BOOLEAN)) {
+            foreach ($licenses as $lic) {
+                $proxy = (new GatewayHttpService($lic['token'], $this->tempo))->forward($body);
+                if ($proxy['ok'] && $proxy['json'] !== null) {
+                    \Ravi\Services\LicenseService::touch($lic['id']);
+                    $j = $proxy['json'];
+                    $u = is_array($j['usage'] ?? null) ? $j['usage'] : [];
+                    $prompt     = (int) ($u['input_tokens'] ?? 0);
+                    $cacheRead  = (int) ($u['cache_read_input_tokens'] ?? 0);
+                    $cacheWrite = (int) ($u['cache_creation_input_tokens'] ?? 0);
+                    $output     = (int) ($u['output_tokens'] ?? 0);
+                    $usage = [
+                        'input_tokens'       => $prompt + $cacheRead + $cacheWrite, // total processado (compat)
+                        'prompt_tokens'      => $prompt,
+                        'cache_read_tokens'  => $cacheRead,
+                        'cache_write_tokens' => $cacheWrite,
+                        'output_tokens'      => $output,
+                    ];
+                    $this->record($tokenId, $clientIp, $model, (string) ($j['model'] ?? $model), 'max', $usage, 'ok', null, $started, $requestText, $this->extractResponseText($j), $srvTok, $srvIps, $identityJson);
+                    // Repassa a resposta REAL da Anthropic (inclui usage com cache — corrige a telemetria do cliente).
+                    return ['http' => $proxy['http'], 'json' => $j];
+                }
+                $proxyErr = '[' . $lic['name'] . '/proxy] ' . (string) $proxy['error'];
+                if (!$proxy['transport_fail'] && in_array($proxy['http'], [429, 529], true)) {
+                    continue; // limite desta licença: tenta a próxima da cadeia
+                }
+                break; // erro de API ou transporte: o CLI legado assume
             }
-            // Proxy falhou (429/erro/transporte) → registra e cai no CLI legado abaixo.
-            $proxyErr = $proxy['error'];
+            error_log('[gateway] token ' . ($tokenId ?? '?') . ': proxy fino falhou (' . $proxyErr . '); reserva no CLI');
         }
 
         // ── Backend PRIMÁRIO (padrão): Claude Code CLI na assinatura Max (bucket generoso) ──

@@ -150,8 +150,8 @@ O executor de cada chamada é decidido em `GatewayService` (`src/Gateway/Gateway
 
 | Backend | Quando | Código |
 |---|---|---|
-| Claude Code CLI em container efêmero | padrão para modelos Claude | `GatewayClaudeService` |
-| Proxy fino para a Messages API | só com `GW_PROXY_ENABLED=true` | `GatewayHttpService` |
+| Proxy fino para a Messages API da assinatura | padrão para modelos Claude; injeta o bloco de identidade do agente no `system` e os cabeçalhos do CLI, percorre a cadeia de licenças em 429 | `GatewayHttpService` |
+| Claude Code CLI em container efêmero | reserva quando o proxy falha, ou padrão com `GW_PROXY_ENABLED=false` | `GatewayClaudeService` |
 | Codex CLI (contas ChatGPT do painel) | modelos `gpt-*` do catálogo | `GatewayCodexService` (imagem `ravi-codex:latest`) |
 | DeepSeek | modelos `deepseek-*` ou regra do token (`gw_tokens.backend`) | `GatewayDeepSeekService` (chave em `app_settings`) |
 
