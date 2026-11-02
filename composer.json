@@ -1,0 +1,68 @@
+{
+    "name": "ravisystems/ravi-developer",
+    "description": "Plataforma web de desenvolvimento com agentes de IA: IDE no navegador com Claude Code, Dev Autônomo, chat e Gateway de API compatível com a Anthropic",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rodrigo",
+            "email": "rodrigo@ravisystems.com.br"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-sodium": "*",
+        "cboden/ratchet": "^0.4.4",
+        "psr/log": "^3.0",
+        "ramsey/uuid": "^4.7",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^10.5",
+        "squizlabs/php_codesniffer": "^3.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ravi\\": "src/"
+        },
+        "files": [
+            "src/Helpers/helpers.php",
+            "src/Helpers/uuid.php",
+            "src/Helpers/formatting.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ravi\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "start": "php -S localhost:8080 -t public",
+        "ws": "php bin/websocket-server.php",
+        "test": "phpunit",
+        "lint": "! (find src bin modulos public config -type f -name '*.php' -print0 | xargs -0 -n 1 -P 8 php -l 2>&1 | grep -v '^No syntax errors detected')",
+        "analise": "phpstan analyse --no-progress --memory-limit=1G",
+        "estilo": "phpcs --standard=PSR12 src/",
+        "verificar": [
+            "@lint",
+            "@test",
+            "@analise"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Roda os testes unitários (PHPUnit)",
+        "lint": "Confere a sintaxe de todos os arquivos PHP (php -l em paralelo)",
+        "analise": "Análise estática com PHPStan nível 5 (com baseline)",
+        "estilo": "Confere o estilo PSR-12 com o PHP_CodeSniffer",
+        "verificar": "Lint, testes e análise estática, na ordem do CI"
+    }
+}

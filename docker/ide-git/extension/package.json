@@ -1,0 +1,30 @@
+{
+  "name": "ravi-git",
+  "displayName": "Ravi — Sincronizar Git",
+  "description": "Botão para sincronizar (commit + push) o projeto com o GitHub, no topo do Explorador.",
+  "version": "1.0.0",
+  "publisher": "ravi",
+  "engines": { "vscode": "^1.70.0" },
+  "categories": ["SCM Providers", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "raviGit.sync",
+        "title": "Sincronizar com o GitHub",
+        "category": "Ravi",
+        "icon": "$(sync)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "raviGit.sync",
+          "when": "view == workbench.explorer.fileView",
+          "group": "navigation@-99"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,82 @@
+# IDE no navegador (VS Code real via code-server) — FUNDAÇÃO da feature "IDE".
+# Parte da imagem sandbox (já tem claude CLI, node 20, git, ferramentas) e adiciona o code-server.
+# Assim o terminal integrado do VS Code tem o `claude` (Claude Code) idêntico ao desktop, e o
+# editor abre o workspace do projeto montado em /workspace.
+FROM ravi-sandbox:latest
+
+USER root
+ENV SHELL=/bin/bash \
+    EDITOR=code \
+    LANG=C.UTF-8
+
+# code-server (VS Code da Coder, open source). Instala o standalone oficial.
+RUN curl -fsSL https://code-server.dev/install.sh | sh \
+    && code-server --version
+
+# Extensões (todas do Open VSX):
+#  - Claude Code (oficial): usa o `claude` CLI por baixo → já autenticado pelo
+#    CLAUDE_CODE_OAUTH_TOKEN do sistema ("Claude Code já conectado", sem login).
+#  - Português do Brasil: base p/ gerar o bundle pt-BR (abaixo).
+#  - GitHub Pull Requests: integração com PRs/issues do GitHub.
+#  - Dracula Theme Official: tema preferido do usuário (aplicado por padrão no escuro).
+#  - Material Icon Theme: ícones bonitos na árvore de arquivos (aplicado por padrão).
+#  - SFTP (Natizyskunk, fork mantido): deploy/sync via sftp.json (mesmo da config do usuário).
+# Best-effort (|| true) — se o Open VSX falhar uma, segue.
+RUN code-server --install-extension anthropic.claude-code || true \
+    && code-server --install-extension ms-ceintl.vscode-language-pack-pt-br || true \
+    && code-server --install-extension github.vscode-pull-request-github || true \
+    && code-server --install-extension dracula-theme.theme-dracula || true \
+    && code-server --install-extension PKief.material-icon-theme || true \
+    && code-server --install-extension Natizyskunk.sftp || true
+
+# PORTUGUÊS DE VERDADE: o code-server (web) ignora --locale para o workbench. Então geramos o
+# bundle de textos `out/nls.messages.js` em pt-BR a partir das traduções do language pack
+# (é o que o build oficial do VS Code faz). Resultado: UI 99,9% em português.
+COPY gen-nls-ptbr.js /tmp/gen-nls-ptbr.js
+RUN PACK="$(ls -d "$HOME"/.local/share/code-server/extensions/ms-ceintl.vscode-language-pack-pt-br-*/translations/main.i18n.json | head -1)" \
+    && node /tmp/gen-nls-ptbr.js "$PACK"
+
+# SEED p/ persistência: guarda uma cópia do user-data (extensões pré-instaladas) em /opt/ide-seed,
+# num caminho que NÃO é escondido pelo volume persistente montado em runtime. O entrypoint usa
+# isso para semear as extensões pré-instaladas no volume do usuário (que pode começar vazio),
+# sem perder as extensões que o usuário instalar.
+# #1 — "Navegador ao vivo": host (Playwright screencast + controle HTTP), CLI p/ o Claude dirigir,
+# e a extensão "Navegador" (webview) do VS Code. Instalada ANTES do seed → é semeada no volume.
+COPY ide-browser/host.js /usr/local/lib/ravi-browser/host.js
+COPY ide-browser/ravi-browser /usr/local/bin/ravi-browser
+COPY ide-browser/extension /usr/local/lib/ravi-browser/extension-src
+RUN chmod +x /usr/local/bin/ravi-browser \
+    && mkdir -p "$HOME/.local/share/code-server/extensions/ravi.ravi-browser-1.0.0" \
+    && cp -a /usr/local/lib/ravi-browser/extension-src/. "$HOME/.local/share/code-server/extensions/ravi.ravi-browser-1.0.0/"
+
+# Extensão "Sincronizar Git" (botão no topo do Explorador). INDEPENDENTE da do navegador.
+COPY ide-git/extension /usr/local/lib/ravi-git/extension-src
+RUN mkdir -p "$HOME/.local/share/code-server/extensions/ravi.ravi-git-1.0.0" \
+    && cp -a /usr/local/lib/ravi-git/extension-src/. "$HOME/.local/share/code-server/extensions/ravi.ravi-git-1.0.0/"
+
+RUN cp -a "$HOME/.local/share/code-server" /opt/ide-seed
+
+# WRAPPER de estado do Claude (working/idle PRECISO): envelopa o binário `claude` real e grava
+# o estado em /tmp/claude-state/<pid> a partir do protocolo stream-json. Substitui o delta de CPU
+# (que piscava durante as esperas da API). O wrap é re-aplicado no boot pelo entrypoint, pois a
+# extensão fica no volume persistente. Aqui já envelopamos o `claude` do PATH (que vive na imagem)
+# e a cópia da extensão na seed.
+COPY claude-wrapper.js /usr/local/lib/ravi/claude-wrapper.js
+COPY wrap-claude.sh /usr/local/bin/wrap-claude.sh
+RUN chmod +x /usr/local/bin/wrap-claude.sh /usr/local/lib/ravi/claude-wrapper.js \
+    && /usr/local/bin/wrap-claude.sh || true
+
+# ravi-ssh/ravi-ctx-keys ATUALIZADOS (modo agente: chave privada fica no HOST). Sobrescrevem os
+# da imagem base sandbox — camada barata aqui, sem rebuild do ravi-sandbox inteiro.
+COPY ravi-ssh /usr/local/bin/ravi-ssh
+COPY ravi-ctx-keys /usr/local/bin/ravi-ctx-keys
+RUN chmod +x /usr/local/bin/ravi-ssh /usr/local/bin/ravi-ctx-keys
+
+# Entrypoint (arquivo próprio — mais robusto que gerar via printf): escreve as configs no boot
+# (tema do env IDE_THEME herdado do Ravi; Dracula no escuro), idioma pt-BR, e configura o git
+# via PROXY do host quando o controller injeta GIT_REMOTE_URL (dono E membros; sem token).
+COPY ide-entrypoint.sh /usr/local/bin/ide-entrypoint.sh
+RUN chmod +x /usr/local/bin/ide-entrypoint.sh
+
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/ide-entrypoint.sh"]

@@ -1,0 +1,187 @@
+FROM ubuntu:22.04
+
+LABEL maintainer="Ravi Developer"
+LABEL description="Sandbox environment for AI agent code execution"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Install essential packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    vim \
+    nano \
+    zip \
+    unzip \
+    build-essential \
+    software-properties-common \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    locales \
+    sudo \
+    htop \
+    tree \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Generate locales
+RUN locale-gen en_US.UTF-8 pt_BR.UTF-8
+
+# ====================
+# Python 3.11
+# ====================
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y \
+        python3.11 \
+        python3.11-venv \
+        python3.11-dev \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# Install common Python packages
+# --ignore-installed evita falha ao tentar remover pacotes distutils do sistema (ex: blinker)
+RUN pip install --no-cache-dir --ignore-installed \
+    requests \
+    beautifulsoup4 \
+    lxml \
+    pandas \
+    numpy \
+    matplotlib \
+    pillow \
+    pyyaml \
+    python-dotenv \
+    httpx \
+    aiohttp \
+    flask \
+    fastapi \
+    uvicorn \
+    sqlalchemy \
+    pytest
+
+# ====================
+# Node.js 20 LTS
+# ====================
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install common Node.js packages globally
+RUN npm install -g \
+    typescript \
+    ts-node \
+    nodemon \
+    pm2 \
+    eslint \
+    prettier \
+    @types/node \
+    express-generator \
+    create-react-app \
+    @nestjs/cli
+
+# ====================
+# PHP 8.1
+# ====================
+# Ubuntu 22.04 (jammy) já fornece PHP 8.1 nativamente no repo 'universe'.
+# Evitamos add-apt-repository (que quebra após repontar python3 -> 3.11: ModuleNotFoundError apt_pkg).
+RUN apt-get update && \
+    apt-get install -y \
+        php8.1-cli \
+        php8.1-common \
+        php8.1-curl \
+        php8.1-mbstring \
+        php8.1-xml \
+        php8.1-zip \
+        php8.1-mysql \
+        php8.1-pgsql \
+        php8.1-sqlite3 \
+        php8.1-gd \
+        php8.1-bcmath \
+        php8.1-intl \
+        php8.1-redis \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# ====================
+# Go 1.21
+# ====================
+RUN wget -q https://go.dev/dl/go1.21.5.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz && \
+    rm go1.21.5.linux-amd64.tar.gz
+
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOPATH="/home/sandbox/go"
+
+# ====================
+# Rust
+# ====================
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# ====================
+# Database Clients
+# ====================
+RUN apt-get update && apt-get install -y \
+    mysql-client \
+    postgresql-client \
+    sqlite3 \
+    redis-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# ====================
+# Playwright for Browser Automation
+# ====================
+RUN npm install -g playwright && \
+    npx playwright install --with-deps chromium firefox
+
+# ====================
+# Puppeteer for Browser Automation (alternative)
+# ====================
+RUN npm install -g puppeteer && \
+    npx puppeteer browsers install chrome
+
+# ====================
+# Additional Tools
+# ====================
+RUN apt-get update && apt-get install -y \
+    imagemagick \
+    ffmpeg \
+    pandoc \
+    graphviz \
+    && rm -rf /var/lib/apt/lists/*
+
+# ====================
+# Create sandbox user (non-root)
+# ====================
+RUN useradd -m -s /bin/bash -u 1000 sandbox && \
+    echo "sandbox ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" >> /etc/sudoers
+
+# Create workspace directory
+RUN mkdir -p /workspace && chown sandbox:sandbox /workspace
+
+# Set up Go paths for sandbox user
+RUN mkdir -p /home/sandbox/go && chown -R sandbox:sandbox /home/sandbox/go
+
+# Switch to sandbox user
+USER sandbox
+WORKDIR /workspace
+
+# Set environment variables
+ENV HOME=/home/sandbox
+ENV PATH="${PATH}:/home/sandbox/.local/bin:/home/sandbox/go/bin"
+
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]

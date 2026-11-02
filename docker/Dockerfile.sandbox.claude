@@ -1,0 +1,42 @@
+# Camada derivada: adiciona Claude Code + PHP 8.3 à imagem ravi-sandbox existente.
+# Build:
+#   docker build -t ravi-sandbox:latest -f docker/Dockerfile.sandbox.claude docker
+FROM ravi-sandbox:latest
+
+USER root
+
+# Claude Code CLI (versão FIXADA — bump aqui p/ atualizar sandbox + IDE de forma reprodutível)
+RUN npm install -g @anthropic-ai/claude-code@2.1.281 && claude --version || true
+
+# PHP 8.3 (ambiente moderno) via PPA ondrej adicionado MANUALMENTE
+# (add-apt-repository quebra na imagem por causa do Python 3.11 padrão / apt_pkg).
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl gnupg \
+    && curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x14aa40ec0831756756d7f66c4f4ea0aae5267a6c" | gpg --batch --yes --dearmor -o /usr/share/keyrings/ondrej-php.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/ondrej-php.gpg] https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ondrej-php.list \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+       php8.3-cli php8.3-mbstring php8.3-xml php8.3-curl php8.3-sqlite3 \
+       php8.3-mysql php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl \
+    && update-alternatives --install /usr/bin/php php /usr/bin/php8.3 83 \
+    && update-alternatives --set php /usr/bin/php8.3 \
+    && php --version \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Skills do time de especialistas (guia de design do Frontend, etc.).
+# Vão para /opt/ravi/skills — FORA de /tmp, que em runtime é tmpfs (--tmpfs /tmp) e seria apagado no boot.
+# O especialista de Frontend lê /opt/ravi/skills/frontend-design/SKILL.md por caminho absoluto
+# (ver src/Agent/SpecialistRegistry.php::DESIGN_SKILL_PATH).
+COPY skills/ /opt/ravi/skills/
+RUN chmod -R a+rX /opt/ravi/skills
+
+# Fontes externas (SSH): sshpass + cliente ssh + rsync para o helper `ravi-ssh` (acesso por nome)
+# e para o deploy automático das entregas (rsync). Faltavam na imagem.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y sshpass openssh-client rsync \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY ravi-ssh /usr/local/bin/ravi-ssh
+COPY ravi-ctx-keys /usr/local/bin/ravi-ctx-keys
+RUN chmod +x /usr/local/bin/ravi-ssh /usr/local/bin/ravi-ctx-keys
+
+USER sandbox

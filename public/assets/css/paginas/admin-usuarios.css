@@ -1,0 +1,6 @@
+/* Admin, usuários: célula de usuário (avatar, nome com selos e e-mail). Só tokens --d2-*. */
+.usuario-celula { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.usuario-celula-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.3; }
+.usuario-celula-nome { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 600; color: var(--d2-text); }
+.usuario-celula-texto > .texto-mudo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lista-item > form { flex: none; }

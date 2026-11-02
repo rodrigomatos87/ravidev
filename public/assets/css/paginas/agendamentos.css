@@ -1,0 +1,16 @@
+/* Agendamentos: só tokens do d2. */
+.agenda-titulo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.agenda-titulo-linha { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.agenda-titulo-linha strong { overflow-wrap: anywhere; }
+.agenda-conteudo {
+    font-family: var(--d2-font-mono);
+    font-size: var(--d2-fs-xs);
+    color: var(--d2-text-muted);
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+.agenda-execucoes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow: auto; }
+.agenda-execucao { border: 1px solid var(--d2-border); border-radius: var(--d2-radius-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.agenda-execucao-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.agenda-saida { max-height: 240px; overflow: auto; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agenda-cartao-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }

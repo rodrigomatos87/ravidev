@@ -1,0 +1,11 @@
+{
+  "port": 8090,
+  "api_key": "PLACEHOLDER_WILL_BE_GENERATED_ON_DEPLOY",
+  "sessions_dir": "./sessions",
+  "webhook_url": "http://127.0.0.1/webhooks/whatsapp",
+  "status_webhook_url": "http://127.0.0.1/webhooks/whatsapp-status",
+  "log_file": "/var/log/ravidev-whatsapp.log",
+  "max_sessions": 100,
+  "reconnect_interval": 30,
+  "qr_timeout": 60
+}

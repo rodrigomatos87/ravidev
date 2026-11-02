@@ -1,0 +1,80 @@
+/* Minha conta: perfil, notificações, GitHub, uso e WhatsApp. Só tokens --d2-*. */
+
+/* Abas da conta são links: sem sublinhado, ícone alinhado ao texto. */
+.conta-abas a.d2-tab { text-decoration: none; display: inline-flex; align-items: center; gap: var(--d2-esp-2); }
+.conta-abas a.d2-tab .d2-icone, .conta-abas a.d2-tab svg { width: 16px; height: 16px; flex: none; }
+
+/* Textos longos quebram em vez de cortar (rótulos de preferência, nomes de aparelho). */
+.d2-painel[data-area="conta"] .lista-item-titulo,
+.d2-painel[data-area="conta"] .lista-item-sub { white-space: normal; overflow-wrap: anywhere; }
+.d2-painel[data-area="conta"] .lista-item { flex-wrap: wrap; }
+.d2-painel[data-area="conta"] .lista-item-texto { flex: 1 1 12rem; }
+
+/* Foto */
+.conta-foto { display: flex; align-items: center; gap: var(--d2-gap); flex-wrap: wrap; }
+.conta-avatar { width: 88px; height: 88px; font-size: 32px; flex: none; }
+.conta-foto-acoes { flex: 1 1 200px; min-width: 0; gap: var(--d2-esp-2); }
+.conta-acoes-inicio { justify-content: flex-start; }
+.conta-campo-curto { max-width: 280px; }
+
+/* Conta do Claude: cartões selecionáveis */
+.conta-licencas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--d2-esp-2); }
+.conta-licenca {
+    display: flex; flex-direction: column; align-items: stretch; gap: 4px; text-align: start; min-width: 0;
+    padding: 12px; border: 1px solid var(--d2-border); border-radius: var(--d2-radius-md);
+    background: var(--d2-bg-subtle); color: var(--d2-text); font: inherit; cursor: pointer;
+    transition: border-color var(--d2-mov-rapido), background var(--d2-mov-rapido);
+}
+.conta-licenca:hover { border-color: var(--d2-border-strong); }
+.conta-licenca:focus-visible { outline: 2px solid var(--d2-foco); outline-offset: 2px; }
+.conta-licenca[aria-checked="true"] { border-color: var(--d2-brand-dim); background: var(--d2-ok-fundo); }
+.conta-licenca.is-bloqueada { opacity: .6; cursor: not-allowed; }
+.conta-licenca.is-salvando { opacity: .7; pointer-events: none; }
+.conta-licenca-nome { display: flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.conta-licenca-marca { width: 16px; height: 16px; flex: none; color: var(--d2-brand-dim); visibility: hidden; }
+.conta-licenca[aria-checked="true"] .conta-licenca-marca { visibility: visible; }
+.conta-licenca-sub { font-size: var(--d2-fs-xs); color: var(--d2-text-muted); }
+.conta-licenca-uso { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; font-size: var(--d2-fs-xs); }
+
+/* Barras de uso por janela */
+.conta-uso-linha { display: grid; grid-template-columns: 64px minmax(0, 1fr) 40px; align-items: center; gap: var(--d2-esp-2); }
+.conta-uso-rotulo { color: var(--d2-text-muted); white-space: nowrap; }
+.conta-uso-barra { gap: 0; }
+.conta-uso-barra .d2-progresso-trilho { overflow: visible; }
+.conta-uso-barra .d2-progresso-barra { overflow: hidden; }
+.conta-uso-teto { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-inline-start: -1px; border-radius: 1px; background: var(--d2-text); }
+.conta-uso-pct { text-align: end; font-size: var(--d2-fs-xs); }
+.conta-uso-pct.is-aviso { color: var(--d2-aviso); }
+.conta-uso-pct.is-erro { color: var(--d2-erro); }
+.conta-uso-nota { color: var(--d2-text-muted); }
+.conta-uso-nota.is-erro { color: var(--d2-erro); font-weight: 600; }
+
+/* QR code: sempre fundo claro com zona livre, para o leitor do celular nos dois temas */
+.conta-qr { align-self: flex-start; padding: 12px; border-radius: var(--d2-radius-md); background: var(--d2-sobre-acento); border: 1px solid var(--d2-border); line-height: 0; }
+.conta-qr img, .conta-qr canvas { display: block; width: 176px; height: 176px; }
+.conta-detalhes summary { cursor: pointer; color: var(--d2-text-muted); font-size: var(--d2-fs-sm); }
+.conta-detalhes summary:focus-visible { outline: 2px solid var(--d2-foco); outline-offset: 2px; border-radius: 4px; }
+.conta-chave { display: flex; align-items: center; gap: var(--d2-esp-2); flex-wrap: wrap; margin-top: var(--d2-esp-2); }
+.conta-chave .codigo { overflow-wrap: anywhere; }
+
+/* Aparelhos */
+.conta-aparelho-titulo { display: inline-flex; align-items: center; gap: var(--d2-esp-2); flex-wrap: wrap; }
+.conta-revogar { color: var(--d2-erro); }
+
+/* Notificações: minutos */
+.conta-minutos { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.conta-minutos .d2-control { width: 76px; text-align: center; }
+
+/* GitHub */
+.conta-gh { display: flex; align-items: center; gap: var(--d2-gap); flex-wrap: wrap; }
+.conta-gh-acao { margin-inline-start: auto; }
+.d2-painel-icone .gh-mark { width: 16px; height: 16px; }
+.d2-vazio-icone .gh-mark { width: 22px; height: 22px; }
+
+@media (max-width: 640px) {
+    .conta-gh-acao { margin-inline-start: 0; }
+    .conta-licencas { grid-template-columns: 1fr; }
+}
+
+/* Rótulos dos indicadores de uso quebram linha no celular em vez de cortar. */
+.d2-painel[data-area="conta"] .d2-indicador-rotulo > span { white-space: normal; overflow-wrap: anywhere; }

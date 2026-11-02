@@ -1,0 +1,3 @@
+# O PHP (www-data) só pode regerar os snippets do nginx por estes dois scripts.
+# Instalado em /etc/sudoers.d/ravi-ide por bin/instalar-modelos.sh.
+www-data ALL=(root) NOPASSWD: /usr/local/bin/ravi-ide-nginx, /usr/local/bin/ravi-preview-nginx

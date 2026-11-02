@@ -1,0 +1,67 @@
+/* Composição das páginas do painel sobre o d2: grades de indicadores, listas acionáveis,
+   blocos de formulário. Nada de cor literal: só tokens --d2-*. */
+
+/* Linha de indicadores (stat tiles) */
+.indicadores { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--d2-gap); }
+.indicadores > .d2-indicador { min-width: 0; }
+.d2-indicador-detalhe { font-size: var(--d2-fs-xs); color: var(--d2-text-faint); }
+
+/* Lista acionável dentro de um painel: linhas com ícone, texto e seta */
+.lista-acionavel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lista-acionavel > li + li { border-top: 1px solid var(--d2-border); }
+.lista-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 4px; min-height: 48px;
+    color: var(--d2-text); text-decoration: none; border-radius: var(--d2-radius-md);
+}
+a.lista-item:hover { background: var(--d2-bg-hover); }
+.lista-item-icone {
+    flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--d2-radius-md);
+    background: var(--d2-acento-fundo); color: var(--d2-acento-texto); font-size: 17px;
+}
+.lista-item-icone > .d2-icone { width: 18px; height: 18px; }
+.lista-item-texto { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
+.lista-item-titulo { font-size: var(--d2-fs-md); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lista-item-sub { font-size: var(--d2-fs-xs); color: var(--d2-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lista-item-seta { flex: none; width: 16px; height: 16px; color: var(--d2-text-faint); }
+
+/* Medidores (CPU, memória, disco) */
+.medidores { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--d2-gap); }
+.medidor { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--d2-border); border-radius: var(--d2-radius-md); background: var(--d2-bg-subtle); }
+.medidor-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.medidor-rotulo { font-size: var(--d2-fs-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--d2-text-muted); }
+.medidor-valor { font-size: var(--d2-fs-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+.medidor-meta { font-size: var(--d2-fs-xs); color: var(--d2-text-muted); }
+
+/* Atalhos (cartões de ação) */
+.atalhos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--d2-gap); }
+.atalho {
+    display: flex; flex-direction: column; gap: 6px; padding: 14px; text-align: left; text-decoration: none; cursor: pointer;
+    border: 1px solid var(--d2-border); border-radius: var(--d2-radius-lg); background: var(--d2-bg-elevated); color: var(--d2-text);
+    transition: border-color var(--d2-mov-rapido), transform var(--d2-mov-rapido);
+}
+.atalho:hover { border-color: var(--d2-acento); transform: translateY(-1px); }
+.atalho-icone { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--d2-radius-md); background: var(--d2-acento-fundo); color: var(--d2-acento-texto); }
+.atalho-icone > .d2-icone { width: 18px; height: 18px; }
+.atalho-titulo { font-weight: 600; }
+.atalho-desc { font-size: var(--d2-fs-sm); color: var(--d2-text-muted); }
+
+/* Formulários em painel: grade de campos e rodapé com ações */
+.form-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--d2-gap); }
+.form-grade > .is-cheio { grid-column: 1 / -1; }
+.form-acoes { display: flex; align-items: center; gap: var(--d2-esp-2); flex-wrap: wrap; justify-content: flex-end; }
+
+/* Pares chave/valor */
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: var(--d2-fs-sm); }
+.kv > dt { color: var(--d2-text-muted); }
+.kv > dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* Texto auxiliar e código */
+.texto-mudo { color: var(--d2-text-muted); font-size: var(--d2-fs-sm); }
+.codigo { font-family: var(--d2-font-mono); font-size: var(--d2-fs-sm); padding: 2px 6px; border-radius: var(--d2-radius-sm); background: var(--d2-bg-subtle); border: 1px solid var(--d2-border); }
+pre.codigo { padding: 12px 14px; overflow: auto; white-space: pre; max-height: 420px; }
+
+@media (max-width: 759.98px) {
+    .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kv { grid-template-columns: 1fr; gap: 2px; }
+    .kv > dt { margin-top: 8px; }
+}

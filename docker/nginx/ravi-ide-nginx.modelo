@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Regera o snippet do nginx com uma rota /ide/<token>/ por IDE ativa (auth_request em
+# public/ide-auth.php) a partir de storage/ide-nginx.json, que o IdeService escreve.
+# Chamado pelo sistema via IDE_NGINX_TRIGGER (sudo sem senha, ver docker/nginx/ravi-ide.sudoers).
+# Instalado em /usr/local/bin/ravi-ide-nginx por bin/instalar-modelos.sh (__RAIZ__ = pasta da instalação).
+set -euo pipefail
+RAIZ=__RAIZ__
+DATA=$RAIZ/storage/ide-nginx.json
+OUT=/etc/nginx/snippets/ravi-ides.conf
+BAK=/etc/nginx/snippets/ravi-ides.conf.bak
+FPM_SOCK=${RAVI_FPM_SOCK:-/run/php/php8.2-fpm.sock}
+[ -f "$DATA" ] || echo "[]" > "$DATA"
+[ -f "$OUT" ] && cp "$OUT" "$BAK" || true
+php -r '
+$raiz = $argv[3]; $sock = $argv[4];
+$d = json_decode(@file_get_contents($argv[1]), true) ?: [];
+$o = "";
+foreach ($d as $p) {
+  $t = preg_replace("/[^a-f0-9]/", "", (string)($p["token"] ?? ""));
+  $port = (int)($p["port"] ?? 0);
+  if ($t === "" || $port < 21100 || $port > 21199) continue;
+  $o .= "location = /__ideauth_$t {\n";
+  $o .= "    internal;\n";
+  $o .= "    include fastcgi_params;\n";
+  $o .= "    fastcgi_pass unix:$sock;\n";
+  $o .= "    fastcgi_param SCRIPT_FILENAME $raiz/public/ide-auth.php;\n";
+  $o .= "    fastcgi_param SCRIPT_NAME /ide-auth.php;\n";
+  $o .= "    fastcgi_param DOCUMENT_ROOT $raiz/public;\n";
+  $o .= "    fastcgi_param QUERY_STRING token=$t;\n";
+  $o .= "    fastcgi_param REQUEST_METHOD GET;\n";
+  $o .= "}\n";
+  $o .= "location ^~ /ide/$t/ {\n";
+  $o .= "    auth_request /__ideauth_$t;\n";
+  $o .= "    proxy_pass http://127.0.0.1:$port/;\n";
+  $o .= "    proxy_http_version 1.1;\n";
+  $o .= "    proxy_set_header Upgrade \$http_upgrade;\n";
+  $o .= "    proxy_set_header Connection \$connection_upgrade;\n";
+  $o .= "    proxy_set_header Host \$host;\n";
+  $o .= "    proxy_set_header X-Real-IP \$remote_addr;\n";
+  $o .= "    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
+  $o .= "    proxy_set_header X-Forwarded-Proto \$scheme;\n";
+  $o .= "    proxy_read_timeout 86400;\n";
+  $o .= "    proxy_hide_header X-Frame-Options;\n";
+  $o .= "    proxy_redirect / /ide/$t/;\n";
+  $o .= "    proxy_cookie_path / /ide/$t/;\n";
+  $o .= "}\n";
+}
+file_put_contents($argv[2], $o);
+' "$DATA" "$OUT" "$RAIZ" "$FPM_SOCK"
+if nginx -t 2>/dev/null; then
+  systemctl reload nginx
+else
+  [ -f "$BAK" ] && cp "$BAK" "$OUT" || : > "$OUT"
+  echo "nginx -t falhou; snippet anterior restaurado" >&2
+  exit 1
+fi

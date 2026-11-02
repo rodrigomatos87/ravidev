@@ -1,0 +1,8 @@
+# Imagem dedicada do backend Codex do gateway (GatewayCodexService): a sandbox
+# base + o CLI oficial da OpenAI. Separada da ravi-sandbox de proposito: o CLI
+# do Codex atualiza em ritmo proprio e um rebuild aqui nao mexe na IDE.
+# Build: docker build -f docker/Dockerfile.codex -t ravi-codex:latest docker/
+FROM ravi-sandbox:latest
+USER root
+RUN npm install -g @openai/codex && codex --version
+USER sandbox

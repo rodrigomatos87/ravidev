@@ -1,0 +1,75 @@
+# MODELO do vhost do gateway público de API (formato Anthropic).
+# Não use este arquivo direto: bin/instalar-modelos.sh troca os marcadores
+# (DOMINIO_API e RAIZ, entre sublinhados duplos) e grava o resultado em
+# /etc/nginx/sites-available/.
+#   DOMINIO_API  domínio do gateway (host do GW_PUBLIC_URL), ex.: api.seu-dominio.com.br
+#   RAIZ         pasta da instalação, ex.: /var/www/ravi-developer
+#
+# Este vhost costuma ser o exposto à internet, então é aqui que mora a proteção
+# volumétrica: cada POST /v1/messages autenticado pode disparar um container de
+# 1GB; sem teto, um token vazado derruba o host.
+# Defesa em camadas: limit_req/limit_conn aqui + semáforo GW_MAX_CONCURRENCY no PHP.
+
+# Zonas (contexto http: sites-enabled é incluído dentro de http{}).
+limit_req_zone  $binary_remote_addr zone=gw_req:10m  rate=5r/s;   # taxa por IP (mata sondagem de token e enxames)
+limit_conn_zone $binary_remote_addr zone=gw_conn:10m;             # conexões simultâneas por IP
+limit_conn_zone $server_name       zone=gw_conn_total:1m;         # agregado do vhost inteiro
+
+server {
+    server_name __DOMINIO_API__;
+    root __RAIZ__/gateway-public;
+    index index.php;
+
+    # 40M comporta o envelope máximo de anexos: 4 imagens de 5MB decodificadas
+    # (~27MB em base64) ou 1 PDF de 10MB (~14MB em base64) + texto.
+    client_max_body_size 40M;
+
+    limit_req  zone=gw_req burst=20 nodelay;
+    limit_conn gw_conn 10;
+    limit_conn gw_conn_total 30;
+    limit_req_status  429;
+    limit_conn_status 429;
+    # Estourou o limite → erro no MESMO formato da API da Anthropic, não HTML do nginx.
+    error_page 429 = @rate_limited;
+    error_page 413 = @too_large;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    location @rate_limited {
+        default_type application/json;
+        return 429 '{"type":"error","error":{"type":"rate_limit_error","message":"Muitas requisições. Aguarde e tente novamente."}}';
+    }
+
+    location @too_large {
+        default_type application/json;
+        return 413 '{"type":"error","error":{"type":"invalid_request_error","message":"Corpo da requisição acima de 40MB."}}';
+    }
+
+    location / {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        # O IP forense é o do socket TCP: o X-Forwarded-For que o CLIENTE mandou
+        # NUNCA chega ao PHP (era forjável e ia direto para gw_requests).
+        fastcgi_param HTTP_X_FORWARDED_FOR $remote_addr;
+        # Acima do GW_TEMPO_TETO (600): a chamada longa (x-ravi-tempo-limite) não é
+        # cortada aqui. A conversa normal continua presa ao GW_MAX_TIMEOUT no PHP.
+        fastcgi_read_timeout 630;
+    }
+
+    location ~ /\.(env|git|htaccess) {
+        deny all;
+    }
+
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/__DOMINIO_API__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__DOMINIO_API__/privkey.pem;
+    # Sem isto, a política de TLS ficava por conta do OpenSSL do sistema:
+    # se ela mudasse, a API regrediria para TLS 1.0/1.1 em silêncio.
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}

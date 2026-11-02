@@ -1,0 +1,14 @@
+# Camada INCREMENTAL: adiciona acesso a fontes externas (SSH) à imagem ravi-sandbox já pronta,
+# SEM re-rodar os passos pesados/frágeis (Claude Code, PHP 8.3 via PPA) do Dockerfile.sandbox.claude.
+# Use quando só precisa (re)aplicar sshpass/rsync/ravi-ssh:
+#   docker build -t ravi-sandbox:latest -f docker/Dockerfile.sandbox.ssh docker
+# (O Dockerfile.sandbox.claude também já contém esses passos, para o rebuild do zero.)
+FROM ravi-sandbox:latest
+USER root
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y sshpass openssh-client rsync \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY ravi-ssh /usr/local/bin/ravi-ssh
+COPY ravi-ctx-keys /usr/local/bin/ravi-ctx-keys
+RUN chmod +x /usr/local/bin/ravi-ssh /usr/local/bin/ravi-ctx-keys
+USER sandbox

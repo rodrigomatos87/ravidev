@@ -1,0 +1,15 @@
+/* Configurações do sistema: blocos de recursos com controles deslizantes. Só tokens --d2-*. */
+.config-recursos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--d2-gap); }
+.config-recurso {
+    display: flex; flex-direction: column; gap: var(--d2-esp-2); min-width: 0; padding: 14px;
+    border: 1px solid var(--d2-border); border-radius: var(--d2-radius-md); background: var(--d2-bg-subtle);
+}
+.config-recurso-titulo { margin: 0; font-size: var(--d2-fs-md); font-weight: 600; color: var(--d2-text); }
+.config-recurso .texto-mudo { margin: 4px 0 0; }
+.config-recurso .d2-field { margin-bottom: 0; }
+.config-faixa-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.config-faixa-cab > .d2-switch { flex: none; }
+.config-faixa { width: 100%; margin: 0; accent-color: var(--d2-brand-dim); cursor: pointer; }
+.config-faixa:focus-visible { outline: 2px solid var(--d2-foco); outline-offset: 4px; border-radius: var(--d2-radius-sm); }
+.config-alinhar-base { justify-content: flex-end; }
+.d2-painel-corpo > .texto-mudo, .d2-pilha > .texto-mudo { margin: 0; line-height: 1.5; }

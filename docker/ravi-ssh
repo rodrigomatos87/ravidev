@@ -1,0 +1,125 @@
+#!/bin/sh
+# ravi-ssh — acesso SSH a "fontes externas" cadastradas na página do projeto, POR NOME.
+#
+#   ravi-ssh "servidor do pedro"                 → abre um shell no servidor (no diretório dele)
+#   ravi-ssh "servidor do pedro" "comando ..."   → roda o comando no servidor (no diretório dele)
+#   ravi-ssh --list                              → lista os servidores disponíveis
+#
+# As fontes ATIVAS são injetadas pelo Ravi em $HOME/.ravi/servers.json SÓ no container deste
+# projeto/usuário. Autenticação por SENHA (via SSHPASS) ou por CHAVE. Chave tem dois modos:
+#   - AGENTE (IDE, padrão novo): a chave privada fica no HOST; o ssh assina pelo ssh-agent
+#     montado em ~/.ravi-ssh/agent.sock. O pin de identidade usa a chave PÚBLICA
+#     (~/.ravi/keys/<id>.pub + IdentitiesOnly=yes) → nunca usa chave de outro projeto.
+#   - LEGADO (chat/sandbox): chave privada materializada em ~/.ravi/keys/<id> (usada com -i).
+#
+# Cada servidor pode ter VÁRIOS endereços (host primário + IPs descobertos, ex.: o IP da VPN). São
+# tentados em ordem e o PRIMEIRO que conectar é usado — então a VPN entra como fallback automático.
+set -e
+
+F="$HOME/.ravi/servers.json"
+
+# Garante as chaves materializadas (idempotente).
+ravi-ctx-keys 2>/dev/null || true
+
+if [ "$1" = "--list" ] || [ "$1" = "-l" ]; then
+    [ -f "$F" ] || { echo "Nenhum servidor configurado para este projeto."; exit 0; }
+    node -e 'const fs=require("fs");let a=[];try{a=JSON.parse(fs.readFileSync(process.env.HOME+"/.ravi/servers.json","utf8"))}catch(e){}
+    if(!a.length){console.log("Nenhum servidor.");process.exit(0)}
+    a.forEach(s=>{const ips=Array.isArray(s.ips)?s.ips:(s.host?[s.host]:[]);console.log("- \""+s.name+"\"  ("+s.user+"@"+ips.join("/")+":"+(s.port||22)+"  dir "+(s.dir||"~")+"  "+(s.auth==="key"?"[chave]":"[senha]")+")")});'
+    exit 0
+fi
+
+NAME="$1"
+[ -n "$NAME" ] || { echo "uso: ravi-ssh \"<nome do servidor>\" [comando]   (ou --list)" >&2; exit 2; }
+shift
+[ -f "$F" ] || { echo "Nenhum servidor configurado para este projeto." >&2; exit 1; }
+
+# Resolve o servidor pelo nome (case-insensitive). Saída: 1 linha por campo; segredos em base64.
+# Linha 2 = candidatos de host separados por vírgula (host primário + IPs descobertos, deduplicados).
+RES="$(RAVI_NAME="$NAME" node -e '
+const fs=require("fs");
+let a=[];try{a=JSON.parse(fs.readFileSync(process.env.HOME+"/.ravi/servers.json","utf8"))}catch(e){}
+const n=(process.env.RAVI_NAME||"").trim().toLowerCase();
+const s=a.find(x=>String(x.name||"").trim().toLowerCase()===n);
+if(!s){console.log("0");process.exit(0)}
+const b=v=>Buffer.from(String(v==null?"":v)).toString("base64");
+let cands=Array.isArray(s.ips)?s.ips.slice():[];
+if(s.host)cands.unshift(s.host);
+cands=cands.map(x=>String(x||"").trim()).filter((x,i,arr)=>x&&arr.indexOf(x)===i);
+if(!cands.length&&s.host)cands=[String(s.host)];
+console.log("1");
+console.log(cands.join(","));
+console.log(String(s.port||22));
+console.log(s.user||"");
+console.log(s.dir||"");
+console.log(s.auth==="key"?"key":"password");
+console.log(b(s.pass));
+console.log(process.env.HOME+"/.ravi/keys/"+(s.id!=null?s.id:s.name));
+console.log(b(s.passphrase));
+')"
+
+FOUND=$(printf '%s\n' "$RES" | sed -n 1p)
+[ "$FOUND" = "1" ] || { echo "Servidor \"$NAME\" não encontrado ou não está ativo." >&2; exit 1; }
+CANDS=$(printf '%s\n' "$RES" | sed -n 2p)
+P=$(printf '%s\n' "$RES" | sed -n 3p)
+U=$(printf '%s\n' "$RES" | sed -n 4p)
+DIR=$(printf '%s\n' "$RES" | sed -n 5p)
+AUTH=$(printf '%s\n' "$RES" | sed -n 6p)
+PASS=$(printf '%s\n' "$RES" | sed -n 7p | base64 -d)
+KEYFILE=$(printf '%s\n' "$RES" | sed -n 8p)
+PASSPHRASE=$(printf '%s\n' "$RES" | sed -n 9p | base64 -d)
+
+OPTS="-p $P -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+CD=""
+[ -n "$DIR" ] && CD="cd $DIR 2>/dev/null; "
+
+# Prefixo/opções de auth — idênticos para o teste de candidatos e para a conexão final.
+SSH_PREFIX=""
+if [ "$AUTH" = "key" ]; then
+    if [ -f "$KEYFILE" ]; then
+        # LEGADO: chave privada no container. IdentitiesOnly=yes → SOMENTE esta chave.
+        OPTS="$OPTS -i $KEYFILE -o IdentitiesOnly=yes"
+        if [ -n "$PASSPHRASE" ]; then
+            export SSHPASS="$PASSPHRASE"
+            SSH_PREFIX="sshpass -P passphrase -e "
+        else
+            OPTS="$OPTS -o BatchMode=yes"
+        fi
+    else
+        # AGENTE: a chave privada está no HOST (ssh-agent montado). Pina a identidade pela
+        # chave PÚBLICA quando disponível (IdentitiesOnly=yes com .pub usa o agente para assinar).
+        [ -S "${SSH_AUTH_SOCK:-}" ] || export SSH_AUTH_SOCK="$HOME/.ravi-ssh/agent.sock"
+        [ -S "$SSH_AUTH_SOCK" ] || { echo "Chave do servidor \"$NAME\" não disponível (agente SSH ausente)." >&2; exit 1; }
+        [ -f "$KEYFILE.pub" ] && OPTS="$OPTS -i $KEYFILE.pub -o IdentitiesOnly=yes"
+        OPTS="$OPTS -o BatchMode=yes"
+    fi
+else
+    # Senha: força auth por senha (sem tentar chaves de lugar nenhum).
+    OPTS="$OPTS -o PubkeyAuthentication=no -o PreferredAuthentications=password"
+    export SSHPASS="$PASS"
+    SSH_PREFIX="sshpass -e "
+fi
+
+# Escolhe o host. Com um único candidato, conecta direto (comportamento de sempre). Com vários,
+# testa cada um rapidamente e usa o PRIMEIRO que responder (o IP da VPN entra aqui como fallback).
+H="${CANDS%%,*}"
+case "$CANDS" in
+    *,*)
+        OLDIFS=$IFS
+        IFS=,
+        for C in $CANDS; do
+            [ -n "$C" ] || continue
+            if ${SSH_PREFIX}ssh $OPTS -o ConnectTimeout=6 "$U@$C" true 2>/dev/null; then
+                H="$C"
+                break
+            fi
+        done
+        IFS=$OLDIFS
+        ;;
+esac
+
+if [ "$#" -gt 0 ]; then
+    exec ${SSH_PREFIX}ssh $OPTS "$U@$H" "${CD}$*"
+else
+    exec ${SSH_PREFIX}ssh -t $OPTS "$U@$H" "${CD}exec \$SHELL -l"
+fi

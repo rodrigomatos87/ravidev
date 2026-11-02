@@ -1,0 +1,26 @@
+{
+  "name": "ravi-browser",
+  "displayName": "Ravi — Navegador ao vivo",
+  "description": "Navegador real controlado pelo Claude, ao vivo dentro da IDE (abre como aba no editor).",
+  "version": "1.2.0",
+  "publisher": "ravi",
+  "engines": { "vscode": "^1.70.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "raviBrowserContainer", "title": "Navegador", "icon": "media/globe.svg" }
+      ]
+    },
+    "views": {
+      "raviBrowserContainer": [
+        { "id": "raviBrowser.launcher", "name": "Navegador ao vivo", "type": "webview" }
+      ]
+    },
+    "commands": [
+      { "command": "raviBrowser.open", "title": "Navegador: abrir o navegador ao vivo", "category": "Ravi" }
+    ]
+  }
+}

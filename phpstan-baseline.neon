@@ -1,0 +1,397 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Offset ''http'' on array\{http\: int, json\: array\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: modulos/vpn/public/index.php
+
+		-
+			message: '#^Offset ''json'' on array\{http\: int, json\: array\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: modulos/vpn/public/index.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: modulos/vpn/src/VpnService.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: modulos/vpn/views/admin.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>, list\<string\>, list\<string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>, list\<string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 4
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 7
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-falsy\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Offset 2 on array\{list\<string\>, list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Offset 3 on array\{list\<string\>, list\<string\>, list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Property Ravi\\Agent\\ContextManager\:\:\$maxContextTokens is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Agent/ContextManager.php
+
+		-
+			message: '#^Offset string on array\{\} in isset\(\) does not exist\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Agent/ProjectAnalyzer.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Ravi\\Models\\Conversation and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Controllers/ChatController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Ravi\\Models\\Message and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Controllers/ChatController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Ravi\\Models\\Conversation and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Controllers/ConversationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Ravi\\Models\\Message and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Controllers/ConversationController.php
+
+		-
+			message: '#^Offset ''ok'' on array\{ok\: bool, login\?\: string, avatar\?\: string, name\?\: string, error\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Controllers/GitHubController.php
+
+		-
+			message: '#^Offset ''ok'' on array\{ok\: bool, token\?\: string, scope\?\: string, error\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Controllers/GitHubController.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: src/Controllers/ProjectController.php
+
+		-
+			message: '#^Method Ravi\\Controllers\\ProjectController\:\:extractZipInto\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Controllers/ProjectController.php
+
+		-
+			message: '#^Offset ''dev_seconds'' on array\{conversation_count\: int\<0, max\>, completed_count\: int\<0, max\>, files_count\: int, total_tokens\: int, total_cost\: float, dev_seconds\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Controllers/ProjectController.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Controllers/ProjectController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Ravi\\Models\\Project and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: src/Controllers/ProjectController.php
+
+		-
+			message: '#^Variable \$uids in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Controllers/ProjectController.php
+
+		-
+			message: '#^Property Ravi\\Core\\Encryption\:\:\$key \(string\) does not accept null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/Core/Encryption.php
+
+		-
+			message: '#^Offset ''path'' does not exist on array\{handler\: array\|\(callable\(\)\: mixed\), middleware\: array\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between numeric\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Gateway/GatewayController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Gateway/GatewayService.php
+
+		-
+			message: '#^Method Ravi\\Models\\Model\:\:find\(\) should return static\(Ravi\\Models\\Model\)\|null but returns object\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/Model.php
+
+		-
+			message: '#^Method Ravi\\Models\\Model\:\:findBy\(\) should return static\(Ravi\\Models\\Model\)\|null but returns object\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/Model.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Models/Model.php
+
+		-
+			message: '#^Property Ravi\\Services\\AgentService\:\:\$toolRegistry is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/AgentService.php
+
+		-
+			message: '#^Property Ravi\\Services\\ClaudeCodeService\:\:\$actingUserId \(int\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: src/Services/ClaudeCodeService.php
+
+		-
+			message: '#^Property Ravi\\Services\\ClaudeCodeService\:\:\$model is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/ClaudeCodeService.php
+
+		-
+			message: '#^Property Ravi\\Services\\ClaudeCodeService\:\:\$sandbox is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/ClaudeCodeService.php
+
+		-
+			message: '#^Property Ravi\\Services\\ClaudeService\:\:\$temperature is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/ClaudeService.php
+
+		-
+			message: '#^Property Ravi\\Services\\FileManagerService\:\:\$uploadsPath is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/FileManagerService.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 2
+			path: src/Services/IdeService.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: src/Services/IdeService.php
+
+		-
+			message: '#^Offset ''branch'' on array\{remote\: string, branch\: string, name\: string, email\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/IdeService.php
+
+		-
+			message: '#^Offset ''email'' on array\{remote\: string, branch\: string, name\: string, email\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/IdeService.php
+
+		-
+			message: '#^Offset ''name'' on array\{remote\: string, branch\: string, name\: string, email\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/IdeService.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/IdeService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: src/Services/LicenseService.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Method Ravi\\Services\\MaestroService\:\:maybeClarify\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Method Ravi\\Services\\MaestroService\:\:runQuick\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Method Ravi\\Services\\MaestroService\:\:triage\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Offset ''mode'' on array\{mode\: string, reply\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Offset ''runs'' on array\{input\: int, cache_write\: int, cache_read\: int, output\: int, runs\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Property Ravi\\Services\\MaestroService\:\:\$buildStartedAt is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Property Ravi\\Services\\MaestroService\:\:\$maxAttempts is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/MaestroService.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/Services/MonitoringService.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/MonitoringService.php
+
+		-
+			message: '#^Property Ravi\\Services\\MultiAgentService\:\:\$claude is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/MultiAgentService.php
+
+		-
+			message: '#^Property Ravi\\Services\\MultiAgentService\:\:\$maxRetries is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/MultiAgentService.php
+
+		-
+			message: '#^Property Ravi\\Services\\MultiAgentService\:\:\$toolRegistry is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/MultiAgentService.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: src/Services/ProjectContextService.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Services/ProjectImportService.php
+
+		-
+			message: '#^Property Ravi\\Services\\QaVisualService\:\:\$workspaceBase is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/QaVisualService.php
+
+		-
+			message: '#^Property Ravi\\Services\\SandboxService\:\:\$activeContainers is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/SandboxService.php
+
+		-
+			message: '#^Property Ravi\\Services\\SandboxService\:\:\$timeout is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/SandboxService.php
+
+		-
+			message: '#^Variable \$contentType on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Services/WebFetchService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$app\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: src/bootstrap.php

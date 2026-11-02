@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# #1 — CLI para o Claude (na IDE) dirigir e INSPECIONAR o "Navegador ao vivo". O usuário vê na hora.
+# v2 — ABA POR SESSÃO: cada sessão do Claude usa a SUA aba (isolada das outras). A aba é descoberta
+# sozinha pela árvore de processos (o `claude` ancestral desta CLI) — ou forçada via RAVI_BROWSER_TAB.
+# Navegar:   open <url> | back | forward | reload | url | scroll [down|up|top|bottom] [px]
+# Device:    mobile [device] | desktop | viewport <larg> <alt> [mobile]   (testa celular/tablet)
+#            devices conhecidos: iphone, iphone-max, iphone-pro, iphone-se, pixel, android, galaxy, ipad, ipad-pro
+# Interagir: click <x> <y> | clickel <seletor> | clicktext <texto> | fill <seletor> <valor>
+#            type <texto> | key <tecla> | waitfor <seletor>
+# Inspecionar: shot [arquivo] [full] (LEIA o PNG p/ VER) | text | html | elements | eval '<js>'
+#              console (erros JS/console + 4xx) | network (requests + corpo das falhas)
+# Abas:      tab (id da sua aba) | tabs (todas) | close (fecha a sua aba)
+set -euo pipefail
+PORT="${RAVI_BROWSER_PORT:-9223}"
+BASE="http://127.0.0.1:${PORT}"
+HOST_JS="/usr/local/lib/ravi-browser/host.js"
+LOCK="/tmp/ravi-browser.lock"
+
+# Descobre a aba desta sessão: sobe pelos processos pais até achar o `claude` (binário real da
+# extensão/terminal). Sem `claude` na cadeia (usuário no terminal) → aba "main" (a mesma da barra de URL).
+detect_tab() {
+  if [ -n "${RAVI_BROWSER_TAB:-}" ]; then printf '%s' "$RAVI_BROWSER_TAB"; return; fi
+  local pid=$$ cmd first base
+  while [ "${pid:-0}" -gt 1 ] 2>/dev/null; do
+    cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
+    first="${cmd%% *}"; base="${first##*/}"
+    case "$base" in
+      claude|claude.real) printf 'claude-%s' "$pid"; return ;;
+    esac
+    case "$cmd" in
+      *"native-binary/claude"*|*"@anthropic-ai/claude-code/cli.js"*) printf 'claude-%s' "$pid"; return ;;
+    esac
+    pid="$(awk '/^PPid:/{print $2}' "/proc/$pid/status" 2>/dev/null || true)"
+    [ -n "$pid" ] || break
+  done
+  printf 'main'
+}
+TAB="$(detect_tab)"
+
+host_up() { curl -s -o /dev/null --max-time 1 "${BASE}/state"; }
+start_host() {
+  # 9>&- : NÃO herdar o fd do lock (senão o host seguraria o flock para sempre e toda chamada esperaria).
+  nohup setsid node "$HOST_JS" >/tmp/ravi-browser.log 2>&1 < /dev/null 9>&- &
+  for _ in $(seq 1 40); do
+    if host_up; then return 0; fi
+    sleep 0.3
+  done
+  return 1
+}
+ensure_host() {
+  # Serializa entre sessões (duas CLIs ao mesmo tempo não sobem dois hosts nem se matam).
+  exec 9>"$LOCK"; flock -w 20 9 || true
+  if ! host_up; then start_host || true; exec 9>&-; return; fi
+  # Host ANTIGO (v1, sem abas) ainda rodando de antes da atualização: troca pelo novo só quando NÃO há
+  # nada a perder — página em branco, navegador nem aberto, ou ninguém dirigindo há 10 min (um fluxo
+  # de teste do Claude pausa dezenas de segundos entre comandos, nunca 10 min). Se estiver em uso,
+  # segue no antigo (funciona, só sem isolamento) até a próxima folga.
+  local st idle
+  st="$(curl -s --max-time 2 "${BASE}/state" 2>/dev/null || true)"
+  case "$st" in *'"v":'*) exec 9>&-; return ;; esac
+  idle="$(printf '%s' "$st" | sed -n 's/.*"idleMs":\(-\{0,1\}[0-9]*\).*/\1/p')"
+  if [ -z "$idle" ] || [ "$idle" -lt 0 ] || [ "$idle" -gt 600000 ] || [ "${st#*\"url\":\"about:blank\"}" != "$st" ] || [ "${st#*\"ready\":false}" != "$st" ]; then
+    pkill -f "ravi-browser/host.js" 2>/dev/null || true
+    sleep 0.5
+    start_host || true
+  fi
+  exec 9>&-
+}
+
+# Helpers: toda chamada leva a aba desta sessão.
+get()  { local p="$1"; shift; curl -s -G "${BASE}${p}" --data-urlencode "tab=${TAB}" "$@"; }
+post() { local p="$1"; shift; curl -s -X POST "${BASE}${p}" --data-urlencode "tab=${TAB}" "$@"; }
+
+cmd="${1:-}"; shift || true
+ensure_host
+case "$cmd" in
+  open|navigate) post /navigate --data-urlencode "url=${1:-about:blank}" ;;
+  click)         post /click --data-urlencode "x=${1:-0}" --data-urlencode "y=${2:-0}" ;;
+  clickel)       post /click --data-urlencode "selector=$*" ;;
+  clicktext)     post /click --data-urlencode "text=$*" ;;
+  fill)          SEL="${1:-}"; shift || true; post /fill --data-urlencode "selector=${SEL}" --data-urlencode "value=$*" ;;
+  waitfor)       post /waitfor --data-urlencode "selector=$*" ;;
+  type)          post /type --data-urlencode "text=$*" ;;
+  key)           post /key --data-urlencode "key=${1:-Enter}" ;;
+  back|forward|reload) post "/${cmd}" ;;
+  scroll)        post /scroll --data-urlencode "dir=${1:-down}" --data-urlencode "amount=${2:-}" ;;
+  mobile)        post /device --data-urlencode "name=${1:-iphone}" ;;
+  device)        post /device --data-urlencode "name=${1:-iphone}" ;;
+  desktop)       post /device --data-urlencode "name=desktop" ;;
+  viewport)      post /device --data-urlencode "w=${1:-390}" --data-urlencode "h=${2:-844}" --data-urlencode "mobile=${3:-1}" ;;
+  elements)      get /elements ;;
+  eval)          post /eval --data-urlencode "js=$*" ;;
+  network|net)   get /network ;;
+  snapshot|a11y) get /snapshot ;;
+  exists)        get /exists --data-urlencode "selector=$*" ;;
+  gettext)       get /gettext --data-urlencode "selector=$*" ;;
+  count)         get /count --data-urlencode "selector=$*" ;;
+  request|req)   get /request --data-urlencode "url=$*" ;;
+  waitidle)      post /waitidle --data-urlencode "timeout=${1:-}" ;;
+  shotel)        SEL="${1:-}"; shift || true; OUT="${1:-/tmp/ravi-shot.png}"; post /screenshot --data-urlencode "selector=${SEL}" --data-urlencode "path=${OUT}" >/dev/null; echo "Screenshot do elemento \"${SEL}\" salvo em ${OUT} — LEIA o arquivo (você tem visão)."; exit 0 ;;
+  diag)          OUT="${1:-/tmp/ravi-diag.png}"; post /diag --data-urlencode "path=${OUT}"; echo; echo "(screenshot em ${OUT} — LEIA o arquivo para VER a tela)"; exit 0 ;;
+  theme)         post /theme --data-urlencode "scheme=${1:-dark}" ;;
+  motion)        post /theme --data-urlencode "motion=${1:-reduce}" ;;
+  auth-save)     post /storage-save --data-urlencode "path=${1:-/tmp/ravi-auth.json}" ;;
+  auth-load)     post /storage-load --data-urlencode "path=${1:-/tmp/ravi-auth.json}" ;;
+  auth-clear)    post /storage-clear ;;
+  url|state)     get /state ;;
+  console)       get /console ;;
+  text)          get /text ;;
+  html)          get /html ;;
+  tab)           post /touch >/dev/null; echo "${TAB}" ;;
+  tabs)          curl -s "${BASE}/tabs" ;;
+  close)         post /tab/close ;;
+  shot|screenshot)
+    # Aceita "full" e o caminho em qualquer ordem: shot | shot full | shot a.png | shot full a.png | shot a.png full
+    FULL=0; OUT=""
+    for a in "$@"; do
+      if [ "$a" = "full" ]; then FULL=1; else OUT="$a"; fi
+    done
+    OUT="${OUT:-/tmp/ravi-shot.png}"
+    post /screenshot --data-urlencode "path=${OUT}" --data-urlencode "full=${FULL}" >/dev/null
+    [ "$FULL" = "1" ] && SCOPE="página INTEIRA" || SCOPE="área visível"
+    echo "Screenshot (${SCOPE}) salvo em ${OUT} — LEIA esse arquivo (você tem visão) para ver a tela e avaliar o layout." ;;
+  *) echo "uso: ravi-browser open <url> | click <x> <y> | clickel <seletor> | clicktext <texto> | fill <seletor> <valor> | type <texto> | key <tecla> | waitfor <seletor> | waitidle [ms] | scroll [down|up|top|bottom] [px] | mobile [device] | desktop | viewport <larg> <alt> [mobile] | theme <dark|light|auto> | motion <reduce|no> | auth-save [arq] | auth-load [arq] | auth-clear | diag [arq] | exists <seletor> | gettext <seletor> | count <seletor> | snapshot | request <url> | back|forward|reload | url | console | network | elements | eval '<js>' | shot [arquivo] [full] | shotel <seletor> [arq] | text | html | tab | tabs | close"; exit 1 ;;
+esac
+echo

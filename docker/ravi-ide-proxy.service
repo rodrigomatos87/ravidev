@@ -1,0 +1,27 @@
+[Unit]
+# MODELO: bin/instalar-modelos.sh troca o marcador RAIZ (pasta da instalação,
+# entre sublinhados duplos) e grava o resultado em /etc/systemd/system/.
+Description=Ravi IDE credential proxy (handle -> token real; mantém o token FORA dos containers)
+# Precisa da bridge do Docker de pé (bind em 172.17.0.1) e do banco/PHP para resolver handles.
+After=network.target docker.service mariadb.service php8.2-fpm.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=__RAIZ__
+Environment=IDE_PROXY_LISTEN=172.17.0.1
+Environment=IDE_PROXY_PORT=8788
+Environment=IDE_PROXY_RESOLVER=__RAIZ__/bin/ide-proxy-token.php
+Environment=IDE_PROXY_PHP=/usr/bin/php
+ExecStart=/usr/bin/python3 __RAIZ__/bin/ide-proxy.py
+Restart=always
+RestartSec=3
+# Endurecimento: sem privilégios extras; o segredo vive só na memória do processo (via PHP).
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

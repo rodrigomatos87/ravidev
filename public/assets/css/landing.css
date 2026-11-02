@@ -1,0 +1,101 @@
+/* Página inicial pública no design system d2. Só tokens --d2-*: vale para claro e escuro. */
+html { scroll-behavior: smooth; }
+body.landing {
+    margin: 0; min-height: 100vh; background: var(--d2-bg); color: var(--d2-text);
+    font-family: var(--d2-font-sans); line-height: 1.6; -webkit-font-smoothing: antialiased;
+    background-image:
+        radial-gradient(60rem 40rem at 75% -10%, color-mix(in srgb, var(--d2-brand) 14%, transparent), transparent 60%),
+        radial-gradient(50rem 35rem at -10% 10%, color-mix(in srgb, var(--d2-info) 8%, transparent), transparent 55%);
+    background-attachment: fixed;
+}
+.landing a { text-decoration: none; }
+.landing-faixa { max-width: 1080px; margin: 0 auto; padding: 0 var(--d2-esp-5); }
+
+/* Topo */
+.landing-topo {
+    position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--d2-bg) 78%, transparent); border-bottom: 1px solid var(--d2-border);
+}
+.landing-nav { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: var(--d2-esp-3); }
+.landing-marca { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: var(--d2-fs-lg); color: var(--d2-text); }
+.landing-marca-selo {
+    width: 36px; height: 36px; border-radius: var(--d2-radius-lg); display: grid; place-items: center;
+    background: var(--d2-brand) var(--d2-brand-gradiente); color: var(--d2-sobre-brand);
+    font-weight: 800; font-size: var(--d2-fs-lg); box-shadow: var(--d2-shadow-md);
+}
+.landing-nav-acoes { display: flex; align-items: center; gap: var(--d2-esp-2); }
+
+/* Destaque principal */
+.landing-hero { text-align: center; padding: 88px 0 56px; }
+.landing-pilula {
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: var(--d2-esp-6);
+    padding: 5px 13px; border-radius: var(--d2-radius-pill);
+    font-size: var(--d2-fs-sm); font-weight: 600;
+    color: var(--d2-brand-texto); background: var(--d2-brand-fundo);
+    border: 1px solid color-mix(in srgb, var(--d2-brand) 28%, transparent);
+}
+.landing-pilula-ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--d2-brand); }
+.landing-hero h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.landing-destaque { color: var(--d2-brand-texto); }
+.landing-hero-texto { color: var(--d2-text-muted); font-size: var(--d2-fs-lg); max-width: 620px; margin: 20px auto 0; }
+.landing-chamadas { display: flex; gap: var(--d2-esp-3); justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+.landing-nota { margin: 22px 0 0; font-size: var(--d2-fs-sm); color: var(--d2-text-faint); }
+.landing-nota strong { color: var(--d2-text-muted); }
+.landing-nota .d2-icone { vertical-align: -2px; }
+
+/* Cartões */
+.landing-cartao {
+    background: var(--d2-bg-elevated); border: 1px solid var(--d2-border);
+    border-radius: var(--d2-radius-xl); padding: var(--d2-esp-6); box-shadow: var(--d2-shadow-sm);
+    transition: transform var(--d2-mov-normal) var(--d2-curva-entrada), border-color var(--d2-mov-normal), box-shadow var(--d2-mov-normal);
+}
+.landing-cartao h3 { margin: 0 0 6px; font-size: var(--d2-fs-lg); font-weight: 650; }
+.landing-cartao p { margin: 0; color: var(--d2-text-muted); font-size: var(--d2-fs-sm); }
+.landing-recursos {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--d2-esp-4);
+    padding: var(--d2-esp-5) 0 64px;
+}
+.landing-recursos .landing-cartao:hover { transform: translateY(-4px); border-color: var(--d2-border-strong); box-shadow: var(--d2-shadow-lg); }
+.landing-cartao-icone {
+    width: 44px; height: 44px; border-radius: var(--d2-radius-lg); margin-bottom: var(--d2-esp-4);
+    display: grid; place-items: center; background: var(--d2-brand-fundo); color: var(--d2-brand-texto);
+}
+
+/* Como funciona */
+.landing-passos { padding: var(--d2-esp-4) 0 72px; }
+.landing-passos h2, .landing-final h2 { margin: 0; text-align: center; font-size: var(--d2-fs-2xl); font-weight: 700; letter-spacing: -.01em; }
+.landing-passos h2 { margin-bottom: var(--d2-esp-7); }
+.landing-passos-lista {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--d2-esp-4);
+}
+.landing-passo-numero {
+    width: 30px; height: 30px; border-radius: var(--d2-radius-md); margin-bottom: 14px;
+    display: grid; place-items: center; font-weight: 700; font-size: var(--d2-fs-sm);
+    background: var(--d2-brand) var(--d2-brand-gradiente); color: var(--d2-sobre-brand);
+}
+
+/* Chamada final */
+.landing-final {
+    text-align: center; margin-bottom: 56px; padding: 48px var(--d2-esp-5);
+    background: var(--d2-bg-elevated); border: 1px solid var(--d2-border); border-radius: var(--d2-radius-xl);
+    background-image: radial-gradient(40rem 20rem at 50% 0%, color-mix(in srgb, var(--d2-brand) 12%, transparent), transparent 60%);
+}
+.landing-final p { color: var(--d2-text-muted); margin: 11px 0 0; }
+.landing-final .landing-chamadas { margin-top: 26px; }
+
+/* Rodapé */
+.landing-rodape { border-top: 1px solid var(--d2-border); padding: 28px 0; }
+.landing-rodape-linha {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--d2-esp-4); flex-wrap: wrap;
+    color: var(--d2-text-faint); font-size: var(--d2-fs-sm);
+}
+
+@media (max-width: 560px) {
+    .landing-so-largo { display: none; }
+    .landing-hero { padding-top: 56px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .landing-cartao { transition: none; }
+}

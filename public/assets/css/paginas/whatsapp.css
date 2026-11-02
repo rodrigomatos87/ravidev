@@ -1,0 +1,31 @@
+/* Alertas no WhatsApp: só tokens do d2. */
+.wa-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--d2-gap); }
+.wa-acoes form, .wa-acoes .d2-btn { width: 100%; }
+.wa-acoes .d2-btn { justify-content: center; }
+.wa-qr-bloco { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.wa-qr {
+    width: 236px; height: 236px; padding: 12px;
+    background: var(--d2-sobre-acento);
+    border: 1px solid var(--d2-border);
+    border-radius: var(--d2-radius-md);
+    display: flex; align-items: center; justify-content: center;
+}
+.wa-qr img, .wa-qr canvas { display: block; }
+.wa-passos { margin: 0; padding-left: 1.2rem; font-size: var(--d2-fs-xs); color: var(--d2-text-muted); line-height: 1.7; align-self: stretch; }
+.wa-aguardando {
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0;
+    align-self: stretch; padding-top: 10px; border-top: 1px solid var(--d2-border);
+    font-size: var(--d2-fs-xs); color: var(--d2-text-muted);
+}
+.wa-giro {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--d2-border-strong); border-top-color: var(--d2-ok);
+    animation: wa-girar .8s linear infinite;
+}
+@keyframes wa-girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .wa-giro { animation: none; } }
+.wa-dica.is-ok { color: var(--d2-ok); }
+.wa-dica.is-erro { color: var(--d2-erro); }
+.js-wa-remover { margin: 0; }
+@media (max-width: 640px) { .wa-acoes { grid-template-columns: 1fr; } }
+.wa-linha { display: block; }

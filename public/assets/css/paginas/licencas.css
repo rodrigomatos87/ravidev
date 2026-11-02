@@ -1,0 +1,104 @@
+/* Licenças (Claude Code e ChatGPT): composição própria da página. Só tokens --d2-*. */
+
+.licencas-abas { margin-bottom: var(--d2-gap); }
+.licencas-ind-de { font-size: var(--d2-fs-sm); color: var(--d2-text-muted); font-weight: 400; margin-left: 4px; }
+
+.licencas-uso-cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.licencas-secao-titulo { margin: 0; font-size: var(--d2-fs-md); font-weight: 600; color: var(--d2-text); flex: 1 1 auto; }
+#uso-quando { font-size: var(--d2-fs-xs); color: var(--d2-text-muted); }
+
+/* Painel de cada licença */
+.licenca.is-inativa .d2-painel-cab,
+.licenca.is-inativa .licenca-kv { opacity: .72; }
+.licenca-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.licenca-selos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.licenca-kv { margin: 0; }
+.licenca-kv dd { min-width: 0; overflow-wrap: anywhere; }
+
+.licenca-uso { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--d2-border); }
+.licenca-uso-linha .d2-progresso-trilho { overflow: visible; }
+.licenca-uso-linha .d2-progresso-barra { border-radius: var(--d2-radius-pill); }
+.licenca-uso-rotulo { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.licenca-uso-eta { font-size: var(--d2-fs-xs); color: var(--d2-text-faint); }
+.licenca-uso-eta.is-perto { color: var(--d2-ok-cor); font-weight: 600; }
+.licenca-uso-teto { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--d2-text-muted); }
+.licenca-uso-sem { display: flex; justify-content: space-between; gap: 12px; font-size: var(--d2-fs-sm); color: var(--d2-text-muted); }
+.licenca-uso-aviso { margin: 0; font-size: var(--d2-fs-sm); color: var(--d2-text-muted); }
+
+.licenca-rodape { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.licenca-form-inline { display: inline-flex; margin: 0; }
+.licenca-rodape .licenca-form-inline:last-child { margin-left: auto; }
+
+/* Modos de roteamento como cartões selecionáveis */
+.licencas-modos { border: 0; padding: 0; margin: 0 0 14px; display: grid; gap: 8px; }
+.licencas-modo { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--d2-border); border-radius: var(--d2-radius-md); background: var(--d2-bg-elevated); cursor: pointer; transition: border-color var(--d2-mov-rapido), background var(--d2-mov-rapido); }
+.licencas-modo:hover { background: var(--d2-bg-hover); }
+.licencas-modo:has(input:checked) { border-color: var(--d2-acento); background: var(--d2-acento-fundo); }
+.licencas-modo input { margin-top: 3px; accent-color: var(--d2-acento); }
+.licencas-modo-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.licencas-modo-texto strong { color: var(--d2-text); font-size: var(--d2-fs-sm); }
+.licencas-modo-texto span { color: var(--d2-text-muted); font-size: var(--d2-fs-xs); line-height: 1.45; }
+
+.licencas-explica { margin: 0 0 12px; font-size: var(--d2-fs-sm); line-height: 1.5; }
+
+/* Listas ordenadas (failover e backup de modelo) */
+.licencas-linhas { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: linha; }
+.licencas-linha { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.licencas-linha > select { flex: 1 1 auto; min-width: 0; }
+ol.licencas-linhas > .licencas-linha::before { counter-increment: linha; content: counter(linha) "."; min-width: 22px; font-family: var(--d2-font-mono); font-size: var(--d2-fs-xs); color: var(--d2-text-muted); }
+.licencas-linha-modelo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid var(--d2-border); border-radius: var(--d2-radius-md); background: var(--d2-bg-subtle); }
+.licencas-linha-modelo .d2-field { margin: 0; min-width: 0; }
+
+/* Pool do Dev Autônomo */
+.licencas-pool { border: 0; padding: 0; margin: 0; }
+.licencas-pool > legend { padding: 0; margin-bottom: 8px; font-size: var(--d2-fs-sm); color: var(--d2-text-muted); }
+.licencas-pool-itens { display: flex; flex-wrap: wrap; gap: 8px; }
+.licencas-pool-item { cursor: pointer; gap: 6px; }
+.licencas-pool-item:has(input:checked) { border-color: var(--d2-acento); background: var(--d2-acento-fundo); color: var(--d2-acento-texto); }
+.licencas-pool-item.is-inativa { opacity: .65; }
+.licencas-pool-item input { accent-color: var(--d2-acento); margin: 0; }
+
+/* Tabela por usuário */
+.licencas-tabela-usuarios .d2-control { min-width: 160px; }
+.licencas-usuario { text-align: left; font-weight: 400; }
+.licencas-usuario-nome { display: block; color: var(--d2-text); font-weight: 600; }
+.licencas-usuario .texto-mudo { font-size: var(--d2-fs-xs); }
+
+/* Formulário e ajuda em modal */
+.licencas-form { display: flex; flex-direction: column; gap: 4px; }
+.licencas-token { font-family: var(--d2-font-mono); font-size: var(--d2-fs-xs); min-height: 96px; resize: vertical; }
+.licencas-teto-campo { max-width: 220px; }
+.licencas-ajuda { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: var(--d2-fs-sm); line-height: 1.5; color: var(--d2-text); }
+.licencas-comando { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.licencas-comando pre.codigo { flex: 1 1 auto; margin: 0; padding: 8px 10px; overflow-x: auto; }
+.licencas-teste { margin: 0 0 10px; font-size: var(--d2-fs-sm); }
+.licencas-teste-detalhe { display: block; margin: 0; padding: 10px; max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--d2-fs-xs); }
+
+/* A linha de backup de modelo empilha os 3 seletores quando o painel é estreito. */
+#lista-modelos { container-type: inline-size; }
+@container (max-width: 560px) {
+    .licencas-linha-modelo { grid-template-columns: minmax(0, 1fr) auto; }
+    .licencas-linha-modelo .d2-field { grid-column: 1; }
+    .licencas-linha-modelo [data-linha="remover"] { grid-column: 2; grid-row: 1; align-self: start; }
+}
+@media (max-width: 720px) {
+    .licencas-tabela-usuarios .d2-control { min-width: 140px; }
+}
+
+/* Abas são links (navegam entre as duas telas): sem sublinhado de link. */
+.licencas-abas a.d2-tab { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+
+/* Celular: a tabela por usuário vira cartões (nome em cima, um seletor por linha). */
+@media (max-width: 720px) {
+    .licencas-tabela-usuarios thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .licencas-tabela-usuarios,
+    .licencas-tabela-usuarios tbody,
+    .licencas-tabela-usuarios tr,
+    .licencas-tabela-usuarios th,
+    .licencas-tabela-usuarios td { display: block; width: auto; height: auto; }
+    .licencas-tabela-usuarios tr { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--d2-border); }
+    .licencas-tabela-usuarios tr:last-child { border-bottom: 0; }
+    .licencas-tabela-usuarios .d2-tabela-linha > .d2-tabela-cel { padding: 0; border: 0; height: auto; }
+    .licencas-tabela-usuarios td::before { content: attr(data-rotulo); display: block; margin-bottom: 4px; font-size: var(--d2-fs-xs); color: var(--d2-text-muted); }
+    .licencas-tabela-usuarios .d2-control { min-width: 0; width: 100%; }
+}

@@ -1,0 +1,22 @@
+# Análise estática do Ravi Developer. Rode com: composer analise
+# O baseline congela os erros que já existiam quando a análise entrou no CI;
+# código novo precisa passar limpo. Para reduzir a dívida, corrija e regenere com:
+#   vendor/bin/phpstan analyse --generate-baseline phpstan-baseline.neon
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+        - modulos
+    bootstrapFiles:
+        - tests/bootstrap.php
+    # A versão pública não leva os módulos da casa; as entradas do baseline que apontam
+    # para eles ficam sem par lá e não podem derrubar a análise.
+    reportUnmatchedIgnoredErrors: false
+    # Os models expõem as colunas por __get/__set (Active Record) e o Ratchet pendura
+    # $resourceId na conexão em tempo de execução: acesso a propriedade dinâmica é o contrato.
+    universalObjectCratesClasses:
+        - Ravi\Models\Model
+        - Ratchet\ConnectionInterface

@@ -1,0 +1,11 @@
+/* Monitoramento (admin): só composição; cores pelos tokens do d2. */
+.monit-esqueleto { display: inline-block; width: 72px; height: 18px; vertical-align: middle; }
+.monit-graficos .d2-painel-corpo { min-height: 220px; }
+.monit-nome { font-family: var(--d2-font-mono, monospace); font-size: var(--d2-fs-xs); color: var(--d2-text-muted); }
+.monit-nome-linha { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.monit-mem { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+.monit-mem .d2-progresso-trilho { height: 4px; }
+.monit-mem-texto { font-size: var(--d2-fs-xs); color: var(--d2-text-muted); font-variant-numeric: tabular-nums; }
+.monit-cpu.is-aviso { color: var(--d2-aviso); }
+.monit-cpu.is-erro { color: var(--d2-erro); }
+[data-vivo="uptime"], [data-vivo="cpu"], [data-vivo="disco"], .monit-mem-texto { white-space: nowrap; }

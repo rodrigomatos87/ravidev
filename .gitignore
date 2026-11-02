@@ -1,0 +1,84 @@
+# ===== Segredos / config local (NUNCA versionar) =====
+.env
+.env.*
+!.env.example
+.vscode/sftp.json
+
+# ===== Dependências =====
+/vendor/
+node_modules/
+
+# ===== Runtime / dados gerados =====
+/storage/logs/*
+/storage/sessions/*
+/storage/cache/*
+/storage/uploads/*
+/storage/sandbox/*
+/storage/claude-memory/*
+/storage/*.json
+!/storage/**/.gitkeep
+
+# ===== Artefatos / temporários =====
+Arquivo.zip
+*.zip
+*.tar
+*.tar.gz
+*.log
+
+# ===== SO / editor =====
+.DS_Store
+src/.DS_Store
+*.swp
+Thumbs.db
+
+# ===== Runtime extra (não versionar) =====
+/whatsapp-go/sessions/
+/public/uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# === Ravi Developer (não versionar) ===
+/.maestro/
+/PLAN.md
+/PROGRESS.md
+/delivery/
+/vendor/
+/node_modules/
+/.expo/
+/dist/
+.env
+*.log
+*.sqlite
+*.sqlite3
+.DS_Store
+__pycache__/
+.vscode/sftp.json
+.ravi/
+# === fim Ravi Developer ===
+
+# ===== Só da Ravi Systems (nunca versionar nem exportar) =====
+# Configs WireGuard de pessoas (chave privada dentro)
+/*.conf
+/*.wg.conf
+# ionCube Encoder (software licenciado, nunca entra no git)
+/ioncube_encoder*
+# Cópias antigas do projeto / pacotes
+/Arquivo.zip
+__MACOSX/
+# Chaves, certificados e dumps
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.sql.gz
+*dump*.sql
+*.bak
+# Editor
+/.vscode/
+# Configuração local do Claude Code desta pasta (comandos com caminhos de produção)
+/.claude/
+# Saída do script de exportação para o repositório público
+/publico-build/
